@@ -1,0 +1,3 @@
+name,enrollment_no,email,mobile,department,course,semester,gender
+John Doe,EN1001,john@college.edu,9876543210,CS,B.Tech,3rd,Male
+Alice Smith,EN1002,alice@college.edu,9876543211,IT,B.Tech,5th,Female

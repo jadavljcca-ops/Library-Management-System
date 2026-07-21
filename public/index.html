@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal - Smart Library QR System</title>
+  
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- html5-qrcode Library for Camera Scanner -->
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+</head>
+<body>
+
+  <!-- LOADING ANIMATION OVERLAY -->
+  <div class="loader-container" id="globalLoader">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ========================================================== -->
+  <!-- AUTHENTICATION PANELS (LOGIN & REGISTRATION) -->
+  <!-- ========================================================== -->
+  <div class="auth-wrapper" id="authContainer">
+    <!-- Decorative Left Panel -->
+    <div class="auth-panel-info">
+      <div class="auth-info-content">
+        <h2>Smart Library QR Entry Management System</h2>
+        <p>A fast, contactless, and paperless entry system for students and library administration.</p>
+        <div class="auth-features">
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>Scan QR with your camera to record Entry & Exit instantly.</span>
+          </div>
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Track your library hours and active sessions in real-time.</span>
+          </div>
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Secure encryption and JWT-based session access.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Form Right Panel -->
+    <div class="auth-panel-form">
+      
+      <!-- Theme Switcher floating on Auth pages -->
+      <div style="position: absolute; top: 1.5rem; right: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+        <button class="theme-toggle-btn" id="themeToggleAuth" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <a href="admin.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;">
+          <i class="fa-solid fa-user-shield"></i> Admin Login
+        </a>
+      </div>
+
+      <!-- 1. LOGIN FORM -->
+      <div class="auth-form-card" id="loginFormCard">
+        <div class="auth-form-header">
+          <h3>Welcome Back!</h3>
+          <p>Login to scan or access your student profile</p>
+        </div>
+        
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginIdentifier">Enrollment No. or College Email</label>
+            <input type="text" id="loginIdentifier" class="form-control" placeholder="e.g. EN12345 or email@college.edu" required>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+          </div>
+          
+          <div style="text-align: right; margin-bottom: 1.5rem;">
+            <a href="#" id="forgotPasswordBtn" style="font-size: 0.85rem; font-weight: 500;">Forgot Password?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            <i class="fa-solid fa-right-to-bracket"></i> Login
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- STUDENT DASHBOARD (POST LOGIN) -->
+  <!-- ========================================================== -->
+  <div class="app-container" id="dashboardContainer" style="display: none;">
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <header>
+        <div class="header-left">
+          <h1>Smart Library Scanner</h1>
+        </div>
+        <div class="header-right">
+          <!-- Live Clock -->
+          <div class="live-clock-card">
+            <i class="fa-regular fa-clock"></i>
+            <span id="liveClock">00:00:00 AM</span>
+          </div>
+
+          <button class="theme-toggle-btn" id="themeToggleDash" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+
+          <!-- Profile Badge dropdown/popup trigger -->
+          <div class="user-profile-badge" id="profileBadge">
+            <div class="user-avatar" id="avatarLetter">S</div>
+            <span id="headerUserName" style="font-weight:600;">Student</span>
+          </div>
+
+          <button class="btn btn-secondary" id="logoutBtn" style="height: 40px; padding: 0 0.85rem;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-body">
+        <div class="student-dashboard-layout">
+          
+          <!-- Column 1: QR Scanner Frame -->
+          <div class="scanner-card">
+            <h3 style="font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Library Entry/Exit Scanner</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
+              Point your camera at the library's QR code to record your visit.
+            </p>
+
+            <div class="scanner-viewfinder">
+              <div id="reader"></div>
+              <div class="scan-overlay" id="scanOverlay">
+                <div class="scan-target">
+                  <div class="scan-laser"></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; width: 100%; justify-content: center; margin-top: 1rem;">
+              <button class="btn btn-primary" id="startScanBtn">
+                <i class="fa-solid fa-camera"></i> Start Scanner
+              </button>
+              <button class="btn btn-secondary" id="stopScanBtn" disabled>
+                <i class="fa-solid fa-video-slash"></i> Stop
+              </button>
+            </div>
+          </div>
+
+          <!-- Column 2: Student Profile Card & Active Status -->
+          <div class="student-card">
+            <div class="student-avatar-large" id="profileAvatar">S</div>
+            <h2 id="profileName" style="font-weight: 800; font-size: 1.5rem; margin-bottom: 0.25rem;">Student Name</h2>
+            <p id="profileEmail" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">email@college.edu</p>
+
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div id="activeSessionIndicator" class="badge badge-info" style="display: flex; align-items: center; justify-content: center; padding: 0.75rem; font-size: 0.85rem; border-radius: 12px; width: 100%;">
+                <span class="badge-dot"></span> Status: Checking connection...
+              </div>
+
+              <button class="btn btn-secondary" id="editProfileBtn" style="width: 100%;">
+                <i class="fa-solid fa-user-gear"></i> Settings & Password
+              </button>
+            </div>
+
+            <div class="student-info-grid">
+              <div class="student-info-item">
+                <span>Enrollment No</span>
+                <span id="profileEnrollment">-</span>
+              </div>
+              <div class="student-info-item">
+                <span>Mobile</span>
+                <span id="profileMobile">-</span>
+              </div>
+              <div class="student-info-item">
+                <span>Department</span>
+                <span id="profileDepartment">-</span>
+              </div>
+              <div class="student-info-item">
+                <span>Course & Sem</span>
+                <span id="profileCourseSem">-</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL DIALOGS -->
+  <!-- ========================================================== -->
+  
+  <!-- 1. FORGOT PASSWORD MODAL -->
+  <div class="modal-overlay" id="forgotPasswordModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Recover Password</h4>
+        <button class="modal-close" id="closeForgotModal">&times;</button>
+      </div>
+      <form id="forgotPasswordForm">
+        <div class="form-group">
+          <label for="forgotIdentifier">Enrollment No. or College Email</label>
+          <input type="text" id="forgotIdentifier" class="form-control" placeholder="e.g. EN12345" required>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+          We will search for your account and send details to your registered college email address.
+        </p>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" id="cancelForgotBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Send Email</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. EDIT PROFILE & PASSWORD MODAL -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Security & Account Settings</h4>
+        <button class="modal-close" id="closeSettingsModal">&times;</button>
+      </div>
+      
+      <form id="changePasswordForm">
+        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.25rem;">Change Password</h5>
+        
+        <div class="form-group">
+          <label for="settingsOldPassword">Current Password</label>
+          <input type="password" id="settingsOldPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="settingsNewPassword">New Password</label>
+          <input type="password" id="settingsNewPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="settingsConfirmPassword">Confirm New Password</label>
+          <input type="password" id="settingsConfirmPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client-side App JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>

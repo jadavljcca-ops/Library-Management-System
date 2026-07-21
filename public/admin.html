@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal - Smart Library System</title>
+  
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- SheetJS (for Excel exports) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- jsPDF & AutoTable (for PDF exports) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- QRious (for QR Code generation) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  
+  <style>
+    .preview-table-input {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 0.4rem;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      color: var(--text-color);
+      transition: all 0.2s;
+    }
+    .preview-table-input:hover {
+      border-color: var(--card-border);
+      background: rgba(0, 0, 0, 0.02);
+    }
+    .preview-table-input:focus {
+      border-color: var(--primary);
+      background: var(--input-bg);
+      outline: none;
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+    [data-theme="dark"] .preview-table-input:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING ANIMATION OVERLAY -->
+  <div class="loader-container" id="adminLoader">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="adminToastContainer"></div>
+
+  <!-- ========================================================== -->
+  <!-- ADMIN LOGIN VIEW (SHOWN BY DEFAULT IF NOT LOGGED IN) -->
+  <!-- ========================================================== -->
+  <div class="auth-wrapper" id="adminAuthContainer">
+    <!-- Decorative Panel -->
+    <div class="auth-panel-info">
+      <div class="auth-info-content">
+        <h2>Smart Library QR Entry System</h2>
+        <p>Administration Portal - Manage student data, monitor active sessions, and download attendance reports.</p>
+        <div class="auth-features">
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Real-time visitor counts and analytical charts.</span>
+          </div>
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-table-list"></i>
+            <span>Full search & filtering across all attendance sheets.</span>
+          </div>
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-file-export"></i>
+            <span>Export filters to CSV, Excel, and PDF formats.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Form Panel -->
+    <div class="auth-panel-form">
+      <div style="position: absolute; top: 1.5rem; right: 1.5rem;">
+        <a href="index.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;">
+          <i class="fa-solid fa-circle-user"></i> Student Portal
+        </a>
+      </div>
+
+      <div class="auth-form-card">
+        <div class="auth-form-header">
+          <h3>Admin Control Center</h3>
+          <p>Sign in to access dashboard data</p>
+        </div>
+        
+        <form id="adminLoginForm">
+          <div class="form-group">
+            <label for="adminUsername">Username or Email</label>
+            <input type="text" id="adminUsername" class="form-control" placeholder="e.g. admin" required>
+          </div>
+          <div class="form-group">
+            <label for="adminPassword">Password</label>
+            <input type="password" id="adminPassword" class="form-control" placeholder="••••••••" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+            <i class="fa-solid fa-lock-open"></i> Authenticate
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- ADMIN PORTAL WRAPPER (POST LOGIN) -->
+  <!-- ========================================================== -->
+  <div class="app-container" id="adminDashboardContainer" style="display: none;">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-section">
+        <div class="brand-logo">
+          <i class="fa-solid fa-book-open-reader"></i>
+        </div>
+        <div class="brand-name">
+          Smart Library<br><span style="font-size: 0.8rem; color: var(--primary);">Admin Board</span>
+        </div>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="menu-item active" id="menuDashBtn">
+          <a href="#"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+        </li>
+        <li class="menu-item" id="menuReportsBtn">
+          <a href="#"><i class="fa-solid fa-file-lines"></i> Attendance Reports</a>
+        </li>
+        <li class="menu-item" id="menuStudentsBtn">
+          <a href="#"><i class="fa-solid fa-users-gear"></i> Students Database</a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer" style="margin-top: auto; display: flex; flex-direction: column; gap: 0.50rem;">
+        <button class="btn btn-secondary" id="adminSettingsBtn" style="width: 100%; text-align: left; justify-content: flex-start;">
+          <i class="fa-solid fa-gears"></i> Settings
+        </button>
+        <button class="btn btn-secondary" id="adminLogoutBtn" style="width: 100%; text-align: left; justify-content: flex-start; color: var(--danger);">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      
+      <!-- Top Header -->
+      <header>
+        <div class="header-left">
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="header-right">
+          <!-- Live Clock -->
+          <div class="live-clock-card">
+            <i class="fa-regular fa-clock"></i>
+            <span id="adminLiveClock">00:00:00 AM</span>
+          </div>
+
+          <!-- Light/Dark Mode Switcher -->
+          <button class="theme-toggle-btn" id="adminThemeToggle" title="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+
+          <!-- Admin User Badge -->
+          <div class="user-profile-badge">
+            <div class="user-avatar" style="background: var(--info);">A</div>
+            <span id="adminProfileName" style="font-weight: 600;">Library Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard Scrollable Body -->
+      <main class="content-body">
+        
+        <!-- SECTION 1: CORE STATS & GRAPHS (DASHBOARD) -->
+        <div id="sectionDashboard">
+          
+          <!-- Key Statistics Cards -->
+          <div class="stats-grid">
+            <div class="stat-card" id="cardTotalStudents">
+              <div class="stat-info">
+                <span class="stat-label">Total Registered Students</span>
+                <span class="stat-value" id="statTotalStudents">0</span>
+              </div>
+              <div class="stat-icon icon-primary">
+                <i class="fa-solid fa-users"></i>
+              </div>
+            </div>
+
+            <div class="stat-card" id="cardInsideLibrary">
+              <div class="stat-info">
+                <span class="stat-label">Currently Inside Library</span>
+                <span class="stat-value" id="statInsideLibrary" style="color: var(--success);">0</span>
+              </div>
+              <div class="stat-icon icon-success">
+                <i class="fa-solid fa-door-open"></i>
+              </div>
+            </div>
+
+            <div class="stat-card" id="cardEntriesToday">
+              <div class="stat-info">
+                <span class="stat-label">Entries Today</span>
+                <span class="stat-value" id="statEntriesToday">0</span>
+              </div>
+              <div class="stat-icon icon-info">
+                <i class="fa-solid fa-right-to-bracket"></i>
+              </div>
+            </div>
+
+            <div class="stat-card" id="cardExitsToday">
+              <div class="stat-info">
+                <span class="stat-label">Exits Today</span>
+                <span class="stat-value" id="statExitsToday">0</span>
+              </div>
+              <div class="stat-icon icon-warning">
+                <i class="fa-solid fa-right-from-bracket"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="charts-grid">
+            
+            <!-- Hourly Traffic Chart -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <span class="chart-title">Hourly Attendance Load Today</span>
+                <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="hourlyTrendChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Real-time Alerts Log Card -->
+            <div class="live-alerts-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <span style="font-weight: 700; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted);">Real-time Activity</span>
+                <span class="badge badge-success" style="font-size:0.65rem;">
+                  <span class="badge-dot" style="animation: pulse 1s infinite;"></span> Live Connected
+                </span>
+              </div>
+              <ul class="alerts-list" id="realTimeAlertsList">
+                <li style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 0;">
+                  No live scans recorded yet.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="charts-grid" style="grid-template-columns: 1fr 1fr;">
+            <!-- Department pie chart -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <span class="chart-title">Traffic by Department Today</span>
+                <i class="fa-solid fa-chart-pie" style="color: var(--info);"></i>
+              </div>
+              <div class="chart-wrapper" style="height: 280px;">
+                <canvas id="departmentChart"></canvas>
+              </div>
+            </div>
+
+            <!-- QR Code Display / Generator Card -->
+            <div class="chart-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; text-align: center;">
+              <h3 style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-qrcode" style="color: var(--primary); margin-right: 0.25rem;"></i> Library Entry/Exit QR Code</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; max-width: 320px;">
+                Display this QR Code at the library entrance. Students scan it using their camera to enter or exit.
+              </p>
+              <div style="background: #ffffff; padding: 1rem; border-radius: 12px; border: 1px solid var(--card-border); display: inline-flex; justify-content: center; align-items: center; margin-bottom: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <canvas id="adminQRCanvas" width="160" height="160"></canvas>
+              </div>
+              <div style="background: var(--bg-color); border: 1px solid var(--card-border); padding: 0.4rem 0.85rem; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
+                QR Value: <code id="activeQRConfig" style="color: var(--primary); margin-left: 0.25rem;">SMART_LIBRARY_QR_2026</code>
+              </div>
+              <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                <button class="btn btn-secondary" id="downloadQRBtn" style="height: 36px; font-size: 0.8rem; padding: 0 0.85rem;">
+                  <i class="fa-solid fa-download"></i> Download
+                </button>
+                <button class="btn btn-secondary" id="printQRBtn" style="height: 36px; font-size: 0.8rem; padding: 0 0.85rem;">
+                  <i class="fa-solid fa-print"></i> Print
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SECTION 2: ATTENDANCE RECORDS & DATA SHEET (REPORTS) -->
+        <div id="sectionReports" style="display: none;">
+          
+          <div class="report-section">
+            
+            <!-- Filters Form -->
+            <form id="filtersForm">
+              <div class="filter-bar">
+                <div class="filter-group">
+                  <label for="filterSearch">Search student</label>
+                  <input type="text" id="filterSearch" class="form-control" placeholder="Name or Enrollment...">
+                </div>
+                
+                <div class="filter-group">
+                  <label for="filterDepartment">Department</label>
+                  <input type="text" id="filterDepartment" class="form-control" placeholder="e.g. Computer Science">
+                </div>
+
+                <div class="filter-group">
+                  <label for="filterCourse">Course</label>
+                  <input type="text" id="filterCourse" class="form-control" placeholder="e.g. B.Tech">
+                </div>
+
+                <div class="filter-group">
+                  <label for="filterSemester">Semester</label>
+                  <select id="filterSemester" class="form-control">
+                    <option value="">All</option>
+                    <option value="1st">1st</option>
+                    <option value="2nd">2nd</option>
+                    <option value="3rd">3rd</option>
+                    <option value="4th">4th</option>
+                    <option value="5th">5th</option>
+                    <option value="6th">6th</option>
+                    <option value="7th">7th</option>
+                    <option value="8th">8th</option>
+                  </select>
+                </div>
+
+                <div class="filter-group">
+                  <label for="filterDate">Date</label>
+                  <input type="date" id="filterDate" class="form-control">
+                </div>
+
+                <div class="filter-group">
+                  <label for="filterStatus">Status</label>
+                  <select id="filterStatus" class="form-control">
+                    <option value="">All</option>
+                    <option value="Inside">Inside</option>
+                    <option value="Exited">Exited</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-bottom: 1.5rem;">
+                <button type="button" class="btn btn-secondary" id="btnResetFilters">
+                  <i class="fa-solid fa-filter-circle-xmark"></i> Clear Filters
+                </button>
+                <button type="submit" class="btn btn-primary" id="btnApplyFilters">
+                  <i class="fa-solid fa-magnifying-glass"></i> Search
+                </button>
+              </div>
+            </form>
+
+            <hr style="border: 0; border-top: 1px solid var(--card-border); margin: 1.5rem 0;">
+
+            <!-- Reports Section Header: Actions & Exports -->
+            <div class="report-actions">
+              <div class="btn-group">
+                <button class="btn btn-secondary" id="btnDailyReport">Daily</button>
+                <button class="btn btn-secondary" id="btnWeeklyReport">Weekly</button>
+                <button class="btn btn-secondary" id="btnMonthlyReport">Monthly</button>
+              </div>
+
+              <div class="btn-group">
+                <button class="btn btn-success" id="exportExcelBtn">
+                  <i class="fa-regular fa-file-excel"></i> Excel
+                </button>
+                <button class="btn btn-secondary" id="exportCsvBtn">
+                  <i class="fa-solid fa-file-csv" style="color: var(--success);"></i> CSV
+                </button>
+                <button class="btn btn-primary" id="exportPdfBtn" style="background-color: var(--danger);">
+                  <i class="fa-regular fa-file-pdf"></i> PDF
+                </button>
+              </div>
+            </div>
+
+            <!-- Attendance Data Table -->
+            <div class="table-wrapper">
+              <table id="attendanceTable">
+                <thead>
+                  <tr>
+                    <th>Entry Date</th>
+                    <th>Student Name</th>
+                    <th>Enrollment No</th>
+                    <th>Department</th>
+                    <th>Course & Sem</th>
+                    <th>Entry Time</th>
+                    <th>Exit Date</th>
+                    <th>Exit Time</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                  <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                      Loading logs...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Elements -->
+            <div class="pagination">
+              <span class="page-info" id="tablePageInfo">Showing 0 to 0 of 0 entries</span>
+              <div class="btn-group">
+                <button class="btn btn-secondary" id="btnPrevPage" style="height: 36px; padding: 0 0.85rem;"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                <button class="btn btn-secondary" id="btnNextPage" style="height: 36px; padding: 0 0.85rem;">Next <i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- SECTION 3: STUDENTS DATABASE & FILE UPLOAD -->
+        <div id="sectionStudents" style="display: none;">
+          
+          <div class="stats-grid" style="grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <!-- File Import Card -->
+            <div class="chart-card" style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3 style="font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-file-import" style="color: var(--primary);"></i> Bulk Import Students
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+                  Upload a CSV, Excel (`.xlsx`, `.xls`), or JSON file to import students. Ensure the file contains columns: 
+                  <code>name</code>, <code>enrollment_no</code>, <code>email</code>, <code>mobile</code>, <code>department</code>, <code>course</code>, <code>semester</code>, <code>gender</code>.
+                </p>
+                
+                <!-- Custom File Upload Drag & Drop Area -->
+                <div id="importDragArea" style="border: 2px dashed var(--input-border); border-radius: 12px; padding: 2rem; text-align: center; background: rgba(0,0,0,0.02); cursor: pointer; transition: all var(--transition-speed);">
+                  <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                  <p style="font-weight: 600; margin-bottom: 0.25rem; color: var(--text-color);">Drag & drop your file here or click to browse</p>
+                  <p style="font-size: 0.75rem; color: var(--text-muted);">Supports CSV, XLSX, XLS, JSON</p>
+                  <input type="file" id="studentsImportFile" accept=".csv, .xlsx, .xls, .json" style="display: none;">
+                </div>
+                
+                <div id="importFileStatus" style="margin-top: 1rem; display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600;">
+                  <i class="fa-solid fa-file-circle-check" style="color: var(--success); font-size: 1.1rem;"></i>
+                  <span id="importFileName" style="word-break: break-all; color: var(--text-color);">file.csv</span>
+                  <span id="importFileSize" style="color: var(--text-muted); font-weight: 400;">(0 KB)</span>
+                  <button type="button" id="btnCancelImport" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.85rem; margin-left: auto; font-weight: 600;">Remove</button>
+                </div>
+              </div>
+              
+              <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button class="btn btn-secondary" id="btnDownloadTemplate" type="button" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-download"></i> Download Template
+                </button>
+                <button class="btn btn-secondary" id="btnLoadDemoData" type="button" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; border-color: var(--primary); color: var(--primary); background: transparent;">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Load Demo Data
+                </button>
+                <button class="btn btn-primary" id="btnSubmitImport" type="button" disabled style="display: none; height: 38px; align-items: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-upload"></i> Import Students
+                </button>
+              </div>
+            </div>
+
+            <!-- Import Guidelines Card -->
+            <div class="chart-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
+              <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Guidelines for Import</h4>
+              <ul style="padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+                <li>Enrollment numbers must be <strong>unique</strong>. Duplicates will be skipped.</li>
+                <li>Email addresses must be unique and valid.</li>
+                <li>Each student must have a password specified. Empty passwords are not allowed.</li>
+                <li>Headers must match the exact field names (case-insensitive).</li>
+              </ul>
+              <div style="margin-top: auto; padding: 0.75rem; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid var(--card-border); font-size: 0.8rem; color: var(--text-muted);">
+                <i class="fa-solid fa-circle-info" style="color: var(--info); margin-right: 0.25rem;"></i> 
+                Need a format guide? Click "Download Template" to fetch a template CSV file.
+              </div>
+            </div>
+          </div>
+
+          <!-- Uploaded File Preview Card -->
+          <div class="report-section" id="importPreviewCard" style="display: none; margin-top: 1.5rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; color: var(--text-color);">
+                  <i class="fa-solid fa-file-invoice" style="color: var(--warning);"></i> Uploaded File Preview
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                  You can edit cells, delete rows, or add new records before confirming the database import.
+                </p>
+              </div>
+              
+              <div style="display: flex; gap: 0.75rem; align-items: center; margin-left: auto;">
+                <button type="button" class="btn btn-secondary" id="btnPreviewAddRow" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-plus"></i> Add Row
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnPreviewCancel" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.2);">
+                  <i class="fa-solid fa-xmark"></i> Clear / Discard
+                </button>
+                <button type="button" class="btn btn-primary" id="btnPreviewConfirm" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; background-color: var(--success); border-color: var(--success);">
+                  <i class="fa-solid fa-circle-check"></i> Confirm & Import (<span id="previewCountText">0</span>)
+                </button>
+              </div>
+            </div>
+
+            <div class="table-wrapper" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 8px;">
+              <table id="previewTable" style="margin-bottom: 0;">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Enrollment No</th>
+                    <th>College Email</th>
+                    <th>Mobile</th>
+                    <th>Department</th>
+                    <th>Course</th>
+                    <th>Semester</th>
+                    <th>Gender</th>
+                    <th>Password</th>
+                    <th style="text-align: center; width: 80px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="previewTableBody">
+                  <!-- Generated dynamically in javascript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Students Data Table Card -->
+          <div class="report-section" style="margin-top: 1.5rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+              <h3 style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-users" style="color: var(--primary);"></i> Students Database
+              </h3>
+              
+              <div style="display: flex; gap: 0.75rem; align-items: center; width: 100%; max-width: 400px; margin-left: auto;">
+                <div style="position: relative; flex-grow: 1;">
+                  <input type="text" id="studentsDbSearchInput" class="form-control" placeholder="Search by name, enrollment, department..." style="padding-left: 2.5rem; height: 38px;">
+                  <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table id="studentsDbTable">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Enrollment No</th>
+                    <th>College Email</th>
+                    <th>Mobile</th>
+                    <th>Department</th>
+                    <th>Course & Sem</th>
+                    <th>Gender</th>
+                    <th>Password</th>
+                    <th style="text-align: center; width: 80px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="studentsDbTableBody">
+                  <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                      Loading students database...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Student Pagination -->
+            <div class="pagination">
+              <span class="page-info" id="studentsDbPageInfo">Showing 0 to 0 of 0 entries</span>
+              <div class="btn-group">
+                <button class="btn btn-secondary" id="btnStudentsDbPrevPage" style="height: 36px; padding: 0 0.85rem;"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                <button class="btn btn-secondary" id="btnStudentsDbNextPage" style="height: 36px; padding: 0 0.85rem;">Next <i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- ADMIN MODAL DIALOGS -->
+  <!-- ========================================================== -->
+  
+  <!-- ADMIN SETTINGS (CHANGE PASSWORD) -->
+  <div class="modal-overlay" id="adminSettingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Admin Account Settings</h4>
+        <button class="modal-close" id="closeAdminSettings">&times;</button>
+      </div>
+      
+      <form id="adminChangePasswordForm">
+        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.25rem;">Change Password</h5>
+        
+        <div class="form-group">
+          <label for="adminOldPassword">Current Password</label>
+          <input type="password" id="adminOldPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="adminNewPassword">New Password</label>
+          <input type="password" id="adminNewPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="adminConfirmPassword">Confirm New Password</label>
+          <input type="password" id="adminConfirmPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" id="cancelAdminSettings">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- REGISTERED STUDENTS LIST MODAL -->
+  <div class="modal-overlay" id="registeredStudentsModal">
+    <div class="modal-card" style="max-width: 900px; width: 95%;">
+      <div class="modal-header">
+        <h4 class="modal-title"><i class="fa-solid fa-users" style="color: var(--primary); margin-right: 0.5rem;"></i> Registered Students List</h4>
+        <button class="modal-close" id="closeStudentsModal">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 1.25rem; display: flex; gap: 1rem; align-items: center;">
+        <div style="position: relative; flex-grow: 1;">
+          <input type="text" id="studentsSearchInput" class="form-control" placeholder="Search by name, enrollment no, department, email..." style="padding-left: 2.5rem;">
+          <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+        </div>
+        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); min-width: 150px; text-align: right;">
+          Total Registered: <span id="modalTotalStudentsCount" style="color: var(--primary); font-weight: 800;">0</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+        <table id="registeredStudentsTable">
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>Enrollment No</th>
+              <th>College Email</th>
+              <th>Mobile</th>
+              <th>Dept & Course</th>
+              <th>Sem</th>
+              <th>Gender</th>
+            </tr>
+          </thead>
+          <tbody id="registeredStudentsTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                Loading students records...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+        <button type="button" class="btn btn-secondary" id="closeStudentsModalBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.io library (Served dynamically by Express Socket.io module) -->
+  <script src="/socket.io/socket.io.js"></script>
+  
+  <!-- Client-side Admin JavaScript -->
+  <script src="js/admin.js"></script>
+</body>
+</html>
