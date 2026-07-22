@@ -3,8 +3,9 @@
 
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const dbType = (process.env.DB_TYPE || 'sqlite').toLowerCase();
 let dbInstance = null;
@@ -24,7 +25,6 @@ if (dbType === 'mysql') {
   console.log('Database: Using MySQL Connection Pool');
 } else {
   const sqlite3 = require('sqlite3').verbose();
-  const path = require('path');
   const dbPath = path.resolve(__dirname, 'library.db');
   dbInstance = new sqlite3.Database(dbPath, (err) => {
     if (err) {

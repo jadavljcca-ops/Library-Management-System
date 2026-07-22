@@ -8,9 +8,10 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const db = require('./db');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const server = http.createServer(app);
@@ -30,7 +31,7 @@ const LIBRARY_QR_CODE = process.env.LIBRARY_QR_CODE || 'SMART_LIBRARY_QR_2026';
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // Serve static frontend files
+app.use(express.static(path.join(__dirname, '../frontend'))); // Serve static frontend files
 
 // Real-time Socket.io connections
 let adminSockets = new Set();

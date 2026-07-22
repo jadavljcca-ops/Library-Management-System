@@ -2,9 +2,9 @@
   "name": "smart-library-qr-system",
   "version": "1.0.0",
   "description": "Smart Library QR Entry Management System",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
