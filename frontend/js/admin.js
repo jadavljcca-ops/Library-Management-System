@@ -390,7 +390,7 @@ function renderTable() {
   if (allRecords.length === 0) {
     attendanceTableBody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+        <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
           No matching attendance sessions found.
         </td>
       </tr>
@@ -420,6 +420,8 @@ function renderTable() {
       <td>${row.department}</td>
       <td>${row.course} <span style="color: var(--text-muted); font-size: 0.8rem;">(${row.semester})</span></td>
       <td>${row.entry_time}</td>
+      <td><span title="${row.entry_latitude || ''}, ${row.entry_longitude || ''}">${row.entry_location_name || '-'}</span></td>
+      <td>${row.distance_meters !== null && row.distance_meters !== undefined ? Math.round(row.distance_meters) + ' m' : '-'}</td>
       <td>${row.exit_date || '-'}</td>
       <td>${row.exit_time || '-'}</td>
       <td>${row.duration || '-'}</td>
@@ -1015,7 +1017,9 @@ function logout() {
 adminLogoutBtn.addEventListener('click', logout);
 
 // Modals Triggers
-adminSettingsBtn.addEventListener('click', () => adminSettingsModal.classList.add('active'));
+adminSettingsBtn.addEventListener('click', () => {
+  adminSettingsModal.classList.add('active');
+});
 closeAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
 cancelAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
 

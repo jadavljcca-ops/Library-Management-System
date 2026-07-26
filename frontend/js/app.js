@@ -8,6 +8,8 @@ const API_URL = ''; // Relative path, works out-of-the-box when hosted on same p
 let token = localStorage.getItem('student_token') || null;
 let currentUser = null;
 let html5QrScanner = null;
+let currentStudentLocation = null;
+let tempCoords = null;
 
 // DOM Elements
 const authContainer = document.getElementById('authContainer');
@@ -51,6 +53,14 @@ const profileMobile = document.getElementById('profileMobile');
 const profileDepartment = document.getElementById('profileDepartment');
 const profileCourseSem = document.getElementById('profileCourseSem');
 const activeSessionIndicator = document.getElementById('activeSessionIndicator');
+
+// Location Verification DOM Elements
+const locationVerificationCard = document.getElementById('locationVerificationCard');
+const qrScannerCard = document.getElementById('qrScannerCard');
+const btnVerifyLocation = document.getElementById('btnVerifyLocation');
+const btnSubmitLocation = document.getElementById('btnSubmitLocation');
+const studentMapContainer = document.getElementById('studentMapContainer');
+const studentMapIframe = document.getElementById('studentMapIframe');
 
 // Scanner Controls
 const startScanBtn = document.getElementById('startScanBtn');
@@ -250,7 +260,11 @@ async function submitQRScan(qrContent) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ qrCode: qrContent })
+      body: JSON.stringify({
+        qrCode: qrContent,
+        latitude: currentStudentLocation.latitude,
+        longitude: currentStudentLocation.longitude
+      })
     });
     const data = await res.json();
 
@@ -369,6 +383,85 @@ function showDashboardScreen() {
   dashboardContainer.style.display = 'flex';
   startClock();
   fetchProfile();
+
+  // Reset/Initialize Location vs Scanner views
+  if (currentStudentLocation) {
+    locationVerificationCard.style.display = 'none';
+    qrScannerCard.style.display = 'block';
+  } else {
+    locationVerificationCard.style.display = 'block';
+    qrScannerCard.style.display = 'none';
+    btnSubmitLocation.disabled = true;
+    studentMapContainer.style.display = 'none';
+    studentMapIframe.src = '';
+    tempCoords = null;
+  }
+}
+
+// Event Listeners for Location Verification
+if (btnVerifyLocation) {
+  btnVerifyLocation.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      showToast('Geolocation is not supported by your browser.', 'error');
+      return;
+    }
+    
+    showLoader(true);
+    btnVerifyLocation.disabled = true;
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        showLoader(false);
+        btnVerifyLocation.disabled = false;
+        tempCoords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        
+        // Show read-only Google Map inside iframe
+        studentMapIframe.src = `https://maps.google.com/maps?q=${tempCoords.latitude},${tempCoords.longitude}&z=15&output=embed`;
+        studentMapContainer.style.display = 'block';
+        
+        // Enable Submit Location button
+        btnSubmitLocation.disabled = false;
+        showToast('Current live location verified! Please submit to unlock scanner.', 'success');
+      },
+      (error) => {
+        showLoader(false);
+        btnVerifyLocation.disabled = false;
+        btnSubmitLocation.disabled = true;
+        studentMapContainer.style.display = 'none';
+        studentMapIframe.src = '';
+        tempCoords = null;
+        
+        let errorMsg = 'Failed to retrieve location.';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = 'Location access denied. Please enable device location permission.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMsg = 'Location information is unavailable.';
+        } else if (error.code === error.TIMEOUT) {
+          errorMsg = 'Location request timed out.';
+        }
+        showToast(errorMsg, 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+}
+
+if (btnSubmitLocation) {
+  btnSubmitLocation.addEventListener('click', () => {
+    if (!tempCoords) {
+      showToast('Please verify your live location first.', 'warning');
+      return;
+    }
+    currentStudentLocation = tempCoords;
+    showToast('Live location submitted successfully! Scanner unlocked.', 'success');
+    
+    // Hide location card, show QR scanner card
+    locationVerificationCard.style.display = 'none';
+    qrScannerCard.style.display = 'block';
+  });
 }
 
 if (showRegisterBtn) {
@@ -477,6 +570,8 @@ function logout() {
   stopCameraScanner();
   token = null;
   currentUser = null;
+  currentStudentLocation = null;
+  tempCoords = null;
   localStorage.removeItem('student_token');
   showAuthScreen('login');
   showToast('Logged out successfully.', 'info');

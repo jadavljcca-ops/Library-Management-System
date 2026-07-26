@@ -116,6 +116,12 @@ async function initDatabase() {
           email VARCHAR(255) NOT NULL
         )
       `);
+      await query(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key_name VARCHAR(255) PRIMARY KEY,
+          value_text TEXT
+        )
+      `);
     } else {
       // Create SQLite tables (foreign keys enabled)
       await query('PRAGMA foreign_keys = ON');
@@ -159,6 +165,13 @@ async function initDatabase() {
           email TEXT NOT NULL
         )
       `);
+
+      await query(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key_name TEXT PRIMARY KEY,
+          value_text TEXT
+        )
+      `);
     }
 
     // Migration to add plain_password to existing databases
@@ -171,6 +184,36 @@ async function initDatabase() {
       console.log('Database Migration: Added plain_password column successfully.');
     } catch (e) {
       // Column already exists, ignore
+    }
+
+    // Migration to add location columns to attendance table
+    try {
+      if (dbType === 'mysql') {
+        await query("ALTER TABLE attendance ADD COLUMN entry_latitude DOUBLE");
+        await query("ALTER TABLE attendance ADD COLUMN entry_longitude DOUBLE");
+        await query("ALTER TABLE attendance ADD COLUMN entry_location_name VARCHAR(500)");
+        await query("ALTER TABLE attendance ADD COLUMN distance_meters DOUBLE");
+      } else {
+        await query("ALTER TABLE attendance ADD COLUMN entry_latitude REAL");
+        await query("ALTER TABLE attendance ADD COLUMN entry_longitude REAL");
+        await query("ALTER TABLE attendance ADD COLUMN entry_location_name TEXT");
+        await query("ALTER TABLE attendance ADD COLUMN distance_meters REAL");
+      }
+      console.log('Database Migration: Added location columns to attendance table.');
+    } catch (e) {
+      // Columns already exist, ignore
+    }
+
+    // Seed default library location settings if not present
+    try {
+      const latResult = await query("SELECT * FROM settings WHERE key_name = 'library_latitude'");
+      if (latResult.rows.length === 0) {
+        await query("INSERT INTO settings (key_name, value_text) VALUES ('library_latitude', '23.0225')");
+        await query("INSERT INTO settings (key_name, value_text) VALUES ('library_longitude', '72.5714')");
+        console.log('Database Seeding: Default library location coordinates seeded.');
+      }
+    } catch (e) {
+      console.error('Error seeding default settings:', e);
     }
 
     console.log('Database tables verified/created successfully.');

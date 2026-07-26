@@ -10,6 +10,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const db = require('./db');
+const https = require('https');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
@@ -92,6 +93,60 @@ function calculateDuration(entryDateStr, entryTimeStr, exitDateStr, exitTimeStr)
     console.error('Error calculating duration:', error);
     return '0s';
   }
+}
+
+// Calculate distance in meters using Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Radius of the Earth in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in meters
+  return d;
+}
+
+// Reverse geocode coordinates to a human-readable location name via OpenStreetMap Nominatim
+function reverseGeocode(lat, lon) {
+  return new Promise((resolve) => {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+    
+    const options = {
+      headers: {
+        'User-Agent': 'LibraryManagementSystem/1.0 (contact@librarysystem.com)'
+      },
+      timeout: 3000 // 3 seconds timeout
+    };
+
+    const req = https.get(url, options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed && parsed.display_name) {
+            resolve(parsed.display_name);
+          } else {
+            resolve(`Location (${lat}, ${lon})`);
+          }
+        } catch (e) {
+          resolve(`Location (${lat}, ${lon})`);
+        }
+      });
+    });
+
+    req.on('error', () => {
+      resolve(`Location (${lat}, ${lon})`);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(`Location (${lat}, ${lon})`);
+    });
+  });
 }
 
 // JWT Authentication Middleware
@@ -357,10 +412,14 @@ app.post('/api/attendance/scan', authenticateToken, async (req, res) => {
     return res.status(403).json({ success: false, message: 'Scanning is restricted to students.' });
   }
 
-  const { qrCode } = req.body;
+  const { qrCode, latitude, longitude } = req.body;
 
   if (!qrCode) {
     return res.status(400).json({ success: false, message: 'QR Code contents are required.' });
+  }
+
+  if (latitude === undefined || longitude === undefined || latitude === null || longitude === null) {
+    return res.status(400).json({ success: false, message: 'Live location coordinates are required to scan the library QR code.' });
   }
 
   // Validate QR Code value
@@ -393,11 +452,32 @@ app.post('/api/attendance/scan', authenticateToken, async (req, res) => {
     const todayTime = getLocalTimeString();
 
     if (activeSessionQuery.rows.length === 0) {
+      // Fetch library coordinates from settings
+      let libLat = 23.0225; // default fallback
+      let libLng = 72.5714; // default fallback
+
+      try {
+        const latSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_latitude'");
+        const lngSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_longitude'");
+        if (latSetting.rows.length > 0 && latSetting.rows[0].value_text) {
+          libLat = parseFloat(latSetting.rows[0].value_text);
+        }
+        if (lngSetting.rows.length > 0 && lngSetting.rows[0].value_text) {
+          libLng = parseFloat(lngSetting.rows[0].value_text);
+        }
+      } catch (e) {
+        console.error('Error fetching library location from settings:', e);
+      }
+
+      // Calculate distance and reverse geocode
+      const distance = calculateDistance(parseFloat(latitude), parseFloat(longitude), libLat, libLng);
+      const locationName = await reverseGeocode(parseFloat(latitude), parseFloat(longitude));
+
       // CASE 1: No active session -> Record Entry
       const insertResult = await db.query(
-        `INSERT INTO attendance (student_id, entry_date, entry_time, exit_date, exit_time, duration, status)
-         VALUES (?, ?, ?, NULL, NULL, NULL, 'Inside')`,
-        [studentId, todayDate, todayTime]
+        `INSERT INTO attendance (student_id, entry_date, entry_time, exit_date, exit_time, duration, status, entry_latitude, entry_longitude, entry_location_name, distance_meters)
+         VALUES (?, ?, ?, NULL, NULL, NULL, 'Inside', ?, ?, ?, ?)`,
+        [studentId, todayDate, todayTime, parseFloat(latitude), parseFloat(longitude), locationName, distance]
       );
 
       const entryRecord = {
@@ -410,7 +490,11 @@ app.post('/api/attendance/scan', authenticateToken, async (req, res) => {
         semester: student.semester,
         entry_date: todayDate,
         entry_time: todayTime,
-        status: 'Inside'
+        status: 'Inside',
+        entry_latitude: parseFloat(latitude),
+        entry_longitude: parseFloat(longitude),
+        entry_location_name: locationName,
+        distance_meters: distance
       };
 
       // Broadcast entry to admin clients in real time
@@ -447,7 +531,11 @@ app.post('/api/attendance/scan', authenticateToken, async (req, res) => {
         exit_date: todayDate,
         exit_time: todayTime,
         duration: durationStr,
-        status: 'Exited'
+        status: 'Exited',
+        entry_latitude: session.entry_latitude,
+        entry_longitude: session.entry_longitude,
+        entry_location_name: session.entry_location_name,
+        distance_meters: session.distance_meters
       };
 
       // Broadcast exit to admin clients in real time
@@ -575,6 +663,10 @@ app.get('/api/admin/attendance-records', authenticateToken, requireAdmin, async 
       a.exit_time, 
       a.duration, 
       a.status,
+      a.entry_latitude,
+      a.entry_longitude,
+      a.entry_location_name,
+      a.distance_meters,
       s.name, 
       s.enrollment_no, 
       s.department, 
@@ -728,6 +820,55 @@ app.delete('/api/admin/students/:id', authenticateToken, requireAdmin, async (re
   } catch (error) {
     console.error('Delete student error:', error);
     res.status(500).json({ success: false, message: 'Server error deleting student record.' });
+  }
+});
+
+// Get Library Location Configuration (Admin Only)
+app.get('/api/admin/settings/library-location', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const latSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_latitude'");
+    const lngSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_longitude'");
+    
+    let latitude = '23.0225'; // Default fallback
+    let longitude = '72.5714'; // Default fallback
+    
+    if (latSetting.rows.length > 0 && latSetting.rows[0].value_text) {
+      latitude = latSetting.rows[0].value_text;
+    }
+    if (lngSetting.rows.length > 0 && lngSetting.rows[0].value_text) {
+      longitude = lngSetting.rows[0].value_text;
+    }
+    
+    res.json({ success: true, latitude, longitude });
+  } catch (error) {
+    console.error('Fetch library location error:', error);
+    res.status(500).json({ success: false, message: 'Server error retrieving library coordinates.' });
+  }
+});
+
+// Update Library Location Configuration (Admin Only)
+app.post('/api/admin/settings/library-location', authenticateToken, requireAdmin, async (req, res) => {
+  const { latitude, longitude } = req.body;
+  
+  if (latitude === undefined || longitude === undefined || latitude === null || longitude === null) {
+    return res.status(400).json({ success: false, message: 'Latitude and Longitude are required.' });
+  }
+  
+  try {
+    await db.query("UPDATE settings SET value_text = ? WHERE key_name = 'library_latitude'", [String(latitude)]);
+    await db.query("UPDATE settings SET value_text = ? WHERE key_name = 'library_longitude'", [String(longitude)]);
+    
+    // Ensure they exist in database
+    const latCheck = await db.query("SELECT * FROM settings WHERE key_name = 'library_latitude'");
+    if (latCheck.rows.length === 0) {
+      await db.query("INSERT INTO settings (key_name, value_text) VALUES ('library_latitude', ?)", [String(latitude)]);
+      await db.query("INSERT INTO settings (key_name, value_text) VALUES ('library_longitude', ?)", [String(longitude)]);
+    }
+    
+    res.json({ success: true, message: 'Library location coordinates updated successfully.' });
+  } catch (error) {
+    console.error('Update library location error:', error);
+    res.status(500).json({ success: false, message: 'Server error updating library coordinates.' });
   }
 });
 
