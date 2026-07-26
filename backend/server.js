@@ -34,11 +34,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend'))); // Serve static frontend files
 
-// Serve index.html from root folder
-app.get(['/', '/index.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, '../index.html'));
-});
-
 // Real-time Socket.io connections
 let adminSockets = new Set();
 io.on('connection', (socket) => {
