@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStatsCounter();
   setupFaqAccordion();
   setupContactForm();
+  setupMobileDrawer();
 });
 
 // ==========================================
@@ -240,4 +241,35 @@ function showLandingToast(message, type = 'success') {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 300);
   }, 4000);
+}
+
+// ==========================================
+// MOBILE DRAWER TOGGLE CONTROL
+// ==========================================
+function setupMobileDrawer() {
+  const mobileToggle = document.getElementById('mobileToggle');
+  const drawerClose = document.getElementById('drawerClose');
+  const drawerBackdrop = document.getElementById('drawerBackdrop');
+  const mobileDrawer = document.getElementById('mobileDrawer');
+  const drawerLinks = document.querySelectorAll('.drawer-link');
+
+  if (!mobileDrawer) return;
+
+  const openDrawer = () => {
+    mobileDrawer.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeDrawer = () => {
+    mobileDrawer.classList.remove('active');
+    document.body.style.overflow = '';
+  };
+
+  if (mobileToggle) mobileToggle.addEventListener('click', openDrawer);
+  if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+  if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+
+  drawerLinks.forEach(link => {
+    link.addEventListener('click', closeDrawer);
+  });
 }

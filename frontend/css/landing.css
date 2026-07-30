@@ -935,10 +935,13 @@ footer {
     height: 70px;
   }
   .nav-menu {
-    display: none; /* In production, you'd trigger a mobile menu drawer */
+    display: none;
+  }
+  .nav-btn-desktop {
+    display: none !important;
   }
   .mobile-toggle {
-    display: block;
+    display: flex !important;
   }
   .hero-content h1 {
     font-size: 2.5rem;
@@ -954,4 +957,100 @@ footer {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
+}
+
+/* ==========================================
+   MOBILE DRAWER STYLING
+   ========================================== */
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility 0.3s ease;
+}
+
+.mobile-drawer.active {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.drawer-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 7, 18, 0.4);
+  opacity: 0;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease;
+}
+
+[data-theme="light"] .drawer-backdrop {
+  background: rgba(15, 23, 42, 0.2);
+}
+
+.mobile-drawer.active .drawer-backdrop {
+  opacity: 1;
+}
+
+.drawer-content {
+  position: absolute;
+  top: 0;
+  right: -320px;
+  width: 320px;
+  max-width: 85%;
+  height: 100%;
+  background: var(--bg-color);
+  border-left: 1px solid var(--card-border);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(0);
+}
+
+.mobile-drawer.active .drawer-content {
+  transform: translateX(-320px);
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.drawer-link {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-color);
+  padding: 0.5rem 0;
+  display: block;
+  transition: color 0.2s ease;
+}
+
+.drawer-link:hover {
+  color: var(--primary);
+}
+
+.drawer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: auto;
 }

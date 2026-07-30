@@ -682,6 +682,16 @@ tr:hover td {
   font-size: 1.2rem;
 }
 
+.auth-top-nav {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  z-index: 10;
+}
+
 .auth-panel-form {
   flex: 1;
   background-color: rgba(9, 13, 22, 0.45);
@@ -1057,6 +1067,19 @@ tr:hover td {
   
   .auth-panel-form {
     padding: 1.5rem;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  
+  .auth-top-nav {
+    position: relative;
+    top: 0;
+    right: 0;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
   }
   
   .form-row {
