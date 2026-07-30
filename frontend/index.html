@@ -3,285 +3,367 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Portal - Smart Library QR System</title>
+  <title>Smart Library QR Entry Management System</title>
   
   <!-- CSS Styles -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/landing.css">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- html5-qrcode Library for Camera Scanner -->
-  <script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
 <body>
 
-  <!-- LOADING ANIMATION OVERLAY -->
-  <div class="loader-container" id="globalLoader">
-    <div class="spinner"></div>
-  </div>
-
-  <!-- TOAST NOTIFICATION CONTAINER -->
-  <div class="toast-container" id="toastContainer"></div>
-
   <!-- ========================================================== -->
-  <!-- AUTHENTICATION PANELS (LOGIN & REGISTRATION) -->
+  <!-- NAVIGATION HEADER -->
   <!-- ========================================================== -->
-  <div class="auth-wrapper" id="authContainer">
-    <!-- Decorative Left Panel -->
-    <div class="auth-panel-info">
-      <div class="auth-info-content">
-        <h2>Smart Library QR Entry Management System</h2>
-        <p>A fast, contactless, and paperless entry system for students and library administration.</p>
-        <div class="auth-features">
-          <div class="auth-feat-item">
-            <i class="fa-solid fa-qrcode"></i>
-            <span>Scan QR with your camera to record Entry & Exit instantly.</span>
-          </div>
-          <div class="auth-feat-item">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Track your library hours and active sessions in real-time.</span>
-          </div>
-          <div class="auth-feat-item">
-            <i class="fa-solid fa-shield-halved"></i>
-            <span>Secure encryption and JWT-based session access.</span>
-          </div>
+  <header class="navbar">
+    <div class="container">
+      <div class="brand-section">
+        <div class="brand-logo">
+          <i class="fa-solid fa-qrcode"></i>
         </div>
+        <span class="brand-name">SmartLib <span class="gradient-text">QR</span></span>
       </div>
-    </div>
-
-    <!-- Interactive Form Right Panel -->
-    <div class="auth-panel-form">
       
-      <!-- Theme Switcher floating on Auth pages -->
-      <div style="position: absolute; top: 1.5rem; right: 1.5rem; display: flex; gap: 1rem; align-items: center;">
-        <button class="theme-toggle-btn" id="themeToggleAuth" title="Toggle Theme">
+      <ul class="nav-menu">
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#stats" class="nav-link">Statistics</a></li>
+        <li><a href="#faq" class="nav-link">FAQs</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+      
+      <div class="nav-actions">
+        <button class="theme-toggle-btn" id="themeToggle" title="Toggle Theme">
           <i class="fa-solid fa-moon"></i>
         </button>
-        <a href="admin.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;">
-          <i class="fa-solid fa-user-shield"></i> Admin Login
+        <a href="student.html" class="btn btn-secondary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 10px;">
+          <i class="fa-solid fa-graduation-cap"></i> Student Portal
+        </a>
+        <a href="admin.html" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 10px;">
+          <i class="fa-solid fa-user-shield"></i> Admin Panel
         </a>
       </div>
+    </div>
+  </header>
 
-      <!-- 1. LOGIN FORM -->
-      <div class="auth-form-card" id="loginFormCard">
-        <div class="auth-form-header">
-          <h3>Welcome Back!</h3>
-          <p>Login to scan or access your student profile</p>
+  <!-- ========================================================== -->
+  <!-- HERO SECTION -->
+  <!-- ========================================================== -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <h1>Next-Gen <span class="gradient-text">QR Check-In</span> for Modern Libraries</h1>
+          <p>Contactless check-ins, automated geofencing verification, and real-time live occupancy data. A secure and paperless solution for campus students and library administrators.</p>
+          <div class="hero-ctas">
+            <a href="student.html" class="btn btn-primary">
+              <i class="fa-solid fa-camera"></i> Student Scan & Check-In
+            </a>
+            <a href="admin.html" class="btn btn-secondary">
+              <i class="fa-solid fa-chart-pie"></i> Manage Library Logs
+            </a>
+          </div>
         </div>
         
-        <form id="loginForm">
-          <div class="form-group">
-            <label for="loginIdentifier">Enrollment No. or College Email</label>
-            <input type="text" id="loginIdentifier" class="form-control" placeholder="e.g. EN12345 or email@college.edu" required>
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
-          </div>
-          
-          <div style="text-align: right; margin-bottom: 1.5rem;">
-            <a href="#" id="forgotPasswordBtn" style="font-size: 0.85rem; font-weight: 500;">Forgot Password?</a>
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="width: 100%;">
-            <i class="fa-solid fa-right-to-bracket"></i> Login
-          </button>
-        </form>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ========================================================== -->
-  <!-- STUDENT DASHBOARD (POST LOGIN) -->
-  <!-- ========================================================== -->
-  <div class="app-container" id="dashboardContainer" style="display: none;">
-    <!-- Main Wrapper -->
-    <div class="main-wrapper">
-      <header>
-        <div class="header-left">
-          <h1>Smart Library Scanner</h1>
-        </div>
-        <div class="header-right">
-          <!-- Live Clock -->
-          <div class="live-clock-card">
-            <i class="fa-regular fa-clock"></i>
-            <span id="liveClock">00:00:00 AM</span>
-          </div>
-
-          <button class="theme-toggle-btn" id="themeToggleDash" title="Toggle Theme">
-            <i class="fa-solid fa-moon"></i>
-          </button>
-
-          <!-- Profile Badge dropdown/popup trigger -->
-          <div class="user-profile-badge" id="profileBadge">
-            <div class="user-avatar" id="avatarLetter">S</div>
-            <span id="headerUserName" style="font-weight:600;">Student</span>
-          </div>
-
-          <button class="btn btn-secondary" id="logoutBtn" style="height: 40px; padding: 0 0.85rem;">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
-        </div>
-      </header>
-
-      <div class="content-body">
-        <div class="student-dashboard-layout">
-          
-          <!-- Column 1a: Location Verification Frame -->
-          <div class="scanner-card" id="locationVerificationCard">
-            <h3 style="font-weight: 700; margin-bottom: 0.5rem; text-align: center;">
-              <i class="fa-solid fa-location-crosshairs" style="color: var(--primary); margin-right: 0.25rem;"></i> Live Location Verification
-            </h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
-              For security, please submit your device's live location to unlock the QR entry scanner.
-            </p>
-
-            <!-- Map Iframe Container -->
-            <div id="studentMapContainer" style="display: none; width: 100%; height: 250px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border); margin-bottom: 1.5rem; box-shadow: var(--card-shadow);">
-              <iframe id="studentMapIframe" src="" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
-              <button class="btn btn-primary" id="btnVerifyLocation" style="width: 100%;">
-                <i class="fa-solid fa-location-dot"></i> Share Live Location
-              </button>
-              <button class="btn btn-success" id="btnSubmitLocation" disabled style="width: 100%;">
-                <i class="fa-solid fa-circle-check"></i> Submit Location & Unlock Scanner
-              </button>
-            </div>
-          </div>
-
-          <!-- Column 1b: QR Scanner Frame -->
-          <div class="scanner-card" id="qrScannerCard" style="display: none;">
-            <h3 style="font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Library Entry/Exit Scanner</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
-              Point your camera at the library's QR code to record your visit.
-            </p>
-
-            <div class="scanner-viewfinder">
-              <div id="reader"></div>
-              <div class="scan-overlay" id="scanOverlay">
-                <div class="scan-target">
-                  <div class="scan-laser"></div>
-                </div>
+        <div class="hero-mockup">
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-dots">
+                <span class="mockup-dot"></span>
+                <span class="mockup-dot"></span>
+                <span class="mockup-dot"></span>
               </div>
+              <div class="mockup-title">Smart Scanner View</div>
             </div>
-
-            <div style="display: flex; gap: 1rem; width: 100%; justify-content: center; margin-top: 1rem;">
-              <button class="btn btn-primary" id="startScanBtn">
-                <i class="fa-solid fa-camera"></i> Start Scanner
-              </button>
-              <button class="btn btn-secondary" id="stopScanBtn" disabled>
-                <i class="fa-solid fa-video-slash"></i> Stop
-              </button>
-            </div>
-          </div>
-
-          <!-- Column 2: Student Profile Card & Active Status -->
-          <div class="student-card">
-            <div class="student-avatar-large" id="profileAvatar">S</div>
-            <h2 id="profileName" style="font-weight: 800; font-size: 1.5rem; margin-bottom: 0.25rem;">Student Name</h2>
-            <p id="profileEmail" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">email@college.edu</p>
-
-            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
-              <div id="activeSessionIndicator" class="badge badge-info" style="display: flex; align-items: center; justify-content: center; padding: 0.75rem; font-size: 0.85rem; border-radius: 12px; width: 100%;">
-                <span class="badge-dot"></span> Status: Checking connection...
+            
+            <div class="mockup-screen">
+              <div class="mockup-qr">
+                <!-- SVG Vector QR Code Graphic -->
+                <svg width="100%" height="100%" viewBox="0 0 100 100" fill="currentColor">
+                  <path d="M0,0 h30 v30 h-30 z M10,10 h10 v10 h-10 z" />
+                  <path d="M70,0 h30 v30 h-30 z M80,10 h10 v10 h-10 z" />
+                  <path d="M0,70 h30 v30 h-30 z M10,80 h10 v10 h-10 z" />
+                  <path d="M35,5 h10 v10 h-10 z M50,5 h10 v15 h-10 z" />
+                  <path d="M35,20 h15 v10 h-15 z M55,20 h10 v10 h-10 z" />
+                  <path d="M70,35 h10 v15 h-10 z M85,35 h10 v10 h-10 z" />
+                  <path d="M35,40 h20 v10 h-20 z M60,45 h10 v15 h-10 z" />
+                  <path d="M40,55 h10 v20 h-10 z M55,55 h10 v10 h-10 z" />
+                  <path d="M70,60 h20 v10 h-20 z M85,75 h10 v15 h-10 z" />
+                  <path d="M35,70 h10 v20 h-10 z M50,75 h25 v10 h-25 z" />
+                  <path d="M45,90 h35 v10 h-35 z M90,90 h10 v10 h-10 z" />
+                </svg>
+                <div class="mockup-laser"></div>
               </div>
-
-              <button class="btn btn-secondary" id="editProfileBtn" style="width: 100%;">
-                <i class="fa-solid fa-user-gear"></i> Settings & Password
-              </button>
-            </div>
-
-            <div class="student-info-grid">
-              <div class="student-info-item">
-                <span>Enrollment No</span>
-                <span id="profileEnrollment">-</span>
-              </div>
-              <div class="student-info-item">
-                <span>Mobile</span>
-                <span id="profileMobile">-</span>
-              </div>
-              <div class="student-info-item">
-                <span>Department</span>
-                <span id="profileDepartment">-</span>
-              </div>
-              <div class="student-info-item">
-                <span>Course & Sem</span>
-                <span id="profileCourseSem">-</span>
+              <div class="mockup-status-badge">
+                <span class="mockup-status-dot"></span>
+                <span>SYSTEM STATUS: ACTIVE & ONLINE</span>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- ========================================================== -->
-  <!-- MODAL DIALOGS -->
+  <!-- KEY FEATURES SECTION -->
   <!-- ========================================================== -->
-  
-  <!-- 1. FORGOT PASSWORD MODAL -->
-  <div class="modal-overlay" id="forgotPasswordModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h4 class="modal-title">Recover Password</h4>
-        <button class="modal-close" id="closeForgotModal">&times;</button>
-      </div>
-      <form id="forgotPasswordForm">
-        <div class="form-group">
-          <label for="forgotIdentifier">Enrollment No. or College Email</label>
-          <input type="text" id="forgotIdentifier" class="form-control" placeholder="e.g. EN12345" required>
-        </div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-          We will search for your account and send details to your registered college email address.
-        </p>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-          <button type="button" class="btn btn-secondary" id="cancelForgotBtn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Send Email</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- 2. EDIT PROFILE & PASSWORD MODAL -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h4 class="modal-title">Security & Account Settings</h4>
-        <button class="modal-close" id="closeSettingsModal">&times;</button>
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Smart System Features</h2>
+        <p>Optimizing attendance records and access security with modern web architecture.</p>
       </div>
       
-      <form id="changePasswordForm">
-        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.25rem;">Change Password</h5>
-        
-        <div class="form-group">
-          <label for="settingsOldPassword">Current Password</label>
-          <input type="password" id="settingsOldPassword" class="form-control" placeholder="••••••••" required>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-qrcode"></i>
+          </div>
+          <h3>Contactless QR Checks</h3>
+          <p>Scan a single QR code from your smartphone camera to check-in or check-out of the library instantly.</p>
         </div>
         
-        <div class="form-group">
-          <label for="settingsNewPassword">New Password</label>
-          <input type="password" id="settingsNewPassword" class="form-control" placeholder="••••••••" required>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-location-crosshairs"></i>
+          </div>
+          <h3>Geofencing Verification</h3>
+          <p>Restricts student scans outside college premises. GPS coordinates are validated locally before unlocking scanning functionality.</p>
         </div>
         
-        <div class="form-group">
-          <label for="settingsConfirmPassword">Confirm New Password</label>
-          <input type="password" id="settingsConfirmPassword" class="form-control" placeholder="••••••••" required>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <h3>Real-Time Admin Logs</h3>
+          <p>Features live websocket notifications. Entry updates show up in the admin control center as they happen.</p>
         </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Update Password</button>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-moon"></i>
+          </div>
+          <h3>Synchronized Themes</h3>
+          <p>Supports light and dark color schemes, saving user preferences automatically across all portal pages.</p>
         </div>
-      </form>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3>Security & Encryption</h3>
+          <p>Integrates secure JSON Web Tokens (JWT) for student sessions and hashes passwords with industry-standard bcrypt encryption.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-file-csv"></i>
+          </div>
+          <h3>Data Export & Reports</h3>
+          <p>Admins can download student lists, active sessions, and attendance history logs to standard Excel CSV files.</p>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Client-side App JavaScript -->
-  <script src="js/app.js"></script>
+  <!-- ========================================================== -->
+  <!-- PLATFORM STATISTICS SECTION -->
+  <!-- ========================================================== -->
+  <section class="stats" id="stats">
+    <div class="container">
+      <div class="stats-container">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number" data-target="5000" data-suffix="+">0</span>
+            <span class="stat-label">Registered Students</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="15000" data-suffix="+">0</span>
+            <span class="stat-label">Managed Entry Visits</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="0" data-suffix="s">0s</span>
+            <span class="stat-label">Check-In Waiting Time</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="100" data-suffix="%" data-prefix="~">0</span>
+            <span class="stat-label">Cloud Up-time Guarantee</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- FAQ ACCORDION SECTION -->
+  <!-- ========================================================== -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <h2>Frequently Asked Questions</h2>
+        <p>Everything you need to know about the QR attendance and verification system.</p>
+      </div>
+      
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How do I check in to the library?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Simply navigate to the Student Portal, login using your enrollment number or registered email, click 'Share Live Location' to verify you are at the library, and then point your camera to scan the library QR code.</p>
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Why is sharing my location mandatory?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>To maintain campus integrity and prevent student login entries from off-campus. The application verifies your browser's geocoordinates to confirm you are in proximity to the library building.</p>
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does checking out work?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>The system uses the same procedure. Scanning the library QR code while you have an active check-in session will automatically log your checkout time and compute your total session duration.</p>
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is the portal accessible on mobile devices?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes, the landing page, student dashboard, and admin control panels are designed to be fully responsive. Students can scan QR codes using their mobile browsers without installing any native apps.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- CONTACT & INQUIRY SECTION -->
+  <!-- ========================================================== -->
+  <section class="contact" id="contact">
+    <div class="container">
+      <div class="contact-grid">
+        <div class="contact-info">
+          <h2>Get in Touch</h2>
+          <p>Have questions about integrating the Smart Library system at your campus? Contact our administrative team for a product demonstration or assistance.</p>
+          
+          <div class="contact-details">
+            <div class="contact-detail-item">
+              <div class="contact-detail-icon">
+                <i class="fa-solid fa-envelope"></i>
+              </div>
+              <div class="contact-detail-content">
+                <h4>General Support</h4>
+                <p>support@college.edu</p>
+              </div>
+            </div>
+            
+            <div class="contact-detail-item">
+              <div class="contact-detail-icon">
+                <i class="fa-solid fa-phone"></i>
+              </div>
+              <div class="contact-detail-content">
+                <h4>College Helpline</h4>
+                <p>+1 (555) 123-4567</p>
+              </div>
+            </div>
+            
+            <div class="contact-detail-item">
+              <div class="contact-detail-icon">
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div class="contact-detail-content">
+                <h4>Main Campus</h4>
+                <p>Central Block, University Campus, Floor 2</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="contact-form-card">
+          <form id="contactForm">
+            <div class="form-group">
+              <label for="contactName">Your Name</label>
+              <input type="text" id="contactName" class="form-control" placeholder="e.g. John Doe" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="contactEmail">Your Email</label>
+              <input type="email" id="contactEmail" class="form-control" placeholder="e.g. email@college.edu" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="contactMessage">Message / Inquiry</label>
+              <textarea id="contactMessage" class="form-control" placeholder="How can we help you?" required></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              <i class="fa-solid fa-paper-plane"></i> Send Message
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- FOOTER -->
+  <!-- ========================================================== -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-section" style="margin-bottom: 0.5rem;">
+            <div class="brand-logo" style="width: 32px; height: 32px; font-size: 1rem; border-radius: 8px;">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <span class="brand-name" style="font-size: 1.1rem;">SmartLib <span class="gradient-text">QR</span></span>
+          </div>
+          <p>A contactless, modern, geofenced QR Code registration system designed for modern campus libraries.</p>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Portal Links</h4>
+          <ul>
+            <li><a href="student.html"><i class="fa-solid fa-graduation-cap"></i> Student Portal Login</a></li>
+            <li><a href="admin.html"><i class="fa-solid fa-user-shield"></i> Admin Control Center</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Platform Navigation</h4>
+          <ul>
+            <li><a href="#features">Key Features</a></li>
+            <li><a href="#stats">System Statistics</a></li>
+            <li><a href="#faq">Frequently Asked Questions</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2026 Smart Library QR System. All rights reserved.</p>
+        <div class="social-links">
+          <a href="#" class="social-link"><i class="fa-brands fa-github"></i></a>
+          <a href="#" class="social-link"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="#" class="social-link"><i class="fa-brands fa-twitter"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript Behavior -->
+  <script src="js/landing.js"></script>
 </body>
 </html>

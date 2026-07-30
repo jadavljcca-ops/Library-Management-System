@@ -843,13 +843,19 @@ tr:hover td {
   border: 1px solid var(--card-border);
   position: relative;
   overflow: hidden;
-  margin-bottom: 1.5rem;
+  margin: 0 auto 1.5rem auto; /* Explicit horizontal centering */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #reader {
   width: 100% !important;
   height: 100% !important;
   border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 #reader video {
