@@ -28,3 +28,6 @@ Thumbs.db
 
 # Local Node/runtime files
 .node/
+
+# Server logs
+*.log
