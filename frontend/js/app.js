@@ -497,10 +497,11 @@ loginForm.addEventListener('submit', async (e) => {
       token = data.token;
       localStorage.setItem('student_token', token);
       loginForm.reset();
-      showToast('Login successful!', 'success');
-      showDashboardScreen();
+      showCustomLoginPopup(true, 'Successfully!', () => {
+        showDashboardScreen();
+      });
     } else {
-      showToast(data.message || 'Login failed.', 'error');
+      showCustomLoginPopup(false, data.message || 'Login failed.');
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -671,3 +672,75 @@ window.addEventListener('DOMContentLoaded', () => {
     showAuthScreen('login');
   }
 });
+
+// --- Custom Login Popup ---
+function showCustomLoginPopup(isSuccess, message, callback) {
+  // Create overlay with blur
+  const overlay = document.createElement('div');
+  overlay.className = 'custom-login-overlay';
+  
+  // Create popup content
+  const popup = document.createElement('div');
+  popup.className = 'custom-login-popup ' + (isSuccess ? 'success' : 'error');
+  
+  const icon = document.createElement('div');
+  icon.className = 'custom-login-icon';
+  icon.innerText = isSuccess ? '🎉' : '❌';
+  
+  const text = document.createElement('div');
+  text.className = 'custom-login-text';
+  text.innerText = isSuccess ? 'Successfully!' : (message || 'Login failed.');
+  
+  popup.appendChild(icon);
+  popup.appendChild(text);
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+
+  // Show party poppers cross visual effect if success
+  if (isSuccess) {
+    const triggerConfetti = () => {
+      var duration = 2000;
+      var end = Date.now() + duration;
+
+      (function frame() {
+        // launch from left edge
+        confetti({
+          particleCount: 7,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
+          zIndex: 999999
+        });
+        // launch from right edge
+        confetti({
+          particleCount: 7,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
+          zIndex: 999999
+        });
+        
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    };
+
+    if (!window.confetti) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js';
+      script.onload = triggerConfetti;
+      document.head.appendChild(script);
+    } else {
+      triggerConfetti();
+    }
+  }
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    overlay.remove();
+    if (callback) callback();
+  }, 3000);
+}
