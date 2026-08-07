@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Portal - Smart Library System</title>
   
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <meta name="theme-color" content="#4a90e2">
+  <link rel="apple-touch-icon" href="logo.jpg">
+
   <!-- CSS Styles -->
   <link rel="stylesheet" href="css/style.css">
   
@@ -687,5 +693,14 @@
   
   <!-- Client-side Admin JavaScript -->
   <script src="js/admin.js"></script>
+
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
 </body>
 </html>

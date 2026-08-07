@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Library QR Entry Management System</title>
 
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <meta name="theme-color" content="#4a90e2">
+  <link rel="apple-touch-icon" href="logo.jpg">
+
   <!-- CSS Styles -->
   <link rel="stylesheet" href="css/landing.css">
 
@@ -21,8 +27,8 @@
   <header class="navbar">
     <div class="container">
       <div class="brand-section">
-        <div class="brand-logo">
-          <i class="fa-solid fa-qrcode"></i>
+        <div class="brand-logo" style="width: 40px; height: 40px; padding: 2px;">
+          <img src="logo.jpg" alt="SmartLib Logo" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
         <span class="brand-name">SmartLib <span class="gradient-text">QR</span></span>
       </div>
@@ -37,6 +43,9 @@
       <div class="nav-actions">
         <button class="theme-toggle-btn" id="themeToggle" title="Toggle Theme">
           <i class="fa-solid fa-moon"></i>
+        </button>
+        <button class="btn btn-primary nav-btn-desktop" id="pwaInstallBtn" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 10px; display: flex; align-items: center; gap: 0.5rem;" title="Install App">
+          <i class="fa-solid fa-download"></i> Install App
         </button>
         <a href="student.html" class="btn btn-secondary nav-btn-desktop"
           style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 10px;">
@@ -61,8 +70,8 @@
     <div class="drawer-content">
       <div class="drawer-header">
         <div class="brand-section">
-          <div class="brand-logo" style="width: 36px; height: 36px; font-size: 1.1rem; border-radius: 10px;">
-            <i class="fa-solid fa-qrcode"></i>
+          <div class="brand-logo" style="width: 36px; height: 36px; padding: 2px; border-radius: 10px;">
+            <img src="logo.jpg" alt="SmartLib Logo" style="width: 100%; height: 100%; object-fit: contain;">
           </div>
           <span class="brand-name" style="font-size: 1.15rem;">SmartLib <span class="gradient-text">QR</span></span>
         </div>
@@ -76,16 +85,18 @@
         <li><a href="#stats" class="drawer-link">Statistics</a></li>
         <li><a href="#faq" class="drawer-link">FAQs</a></li>
         <li><a href="#contact" class="drawer-link">Contact</a></li>
-      </ul>
-
-      <div class="drawer-actions">
-        <a href="student.html" class="btn btn-secondary" style="width: 100%; justify-content: center;">
-          <i class="fa-solid fa-graduation-cap"></i> Student Portal
-        </a>
-        <a href="admin.html" class="btn btn-primary" style="width: 100%; justify-content: center;">
-          <i class="fa-solid fa-user-shield"></i> Admin Panel
-        </a>
-      </div>
+        </ul>
+        <div class="drawer-actions">
+          <button class="btn btn-primary" id="pwaInstallBtnMobile" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+            <i class="fa-solid fa-download"></i> Install App
+          </button>
+          <a href="student.html" class="btn btn-secondary" style="width: 100%; text-align: center; margin-bottom: 1rem;">
+            <i class="fa-solid fa-graduation-cap"></i> Student Portal
+          </a>
+          <a href="admin.html" class="btn btn-primary" style="width: 100%; text-align: center;">
+            <i class="fa-solid fa-user-shield"></i> Admin Panel
+          </a>
+        </div>
     </div>
   </div>
 
@@ -122,20 +133,8 @@
 
             <div class="mockup-screen">
               <div class="mockup-qr">
-                <!-- SVG Vector QR Code Graphic -->
-                <svg width="100%" height="100%" viewBox="0 0 100 100" fill="currentColor">
-                  <path d="M0,0 h30 v30 h-30 z M10,10 h10 v10 h-10 z" />
-                  <path d="M70,0 h30 v30 h-30 z M80,10 h10 v10 h-10 z" />
-                  <path d="M0,70 h30 v30 h-30 z M10,80 h10 v10 h-10 z" />
-                  <path d="M35,5 h10 v10 h-10 z M50,5 h10 v15 h-10 z" />
-                  <path d="M35,20 h15 v10 h-15 z M55,20 h10 v10 h-10 z" />
-                  <path d="M70,35 h10 v15 h-10 z M85,35 h10 v10 h-10 z" />
-                  <path d="M35,40 h20 v10 h-20 z M60,45 h10 v15 h-10 z" />
-                  <path d="M40,55 h10 v20 h-10 z M55,55 h10 v10 h-10 z" />
-                  <path d="M70,60 h20 v10 h-20 z M85,75 h10 v15 h-10 z" />
-                  <path d="M35,70 h10 v20 h-10 z M50,75 h25 v10 h-25 z" />
-                  <path d="M45,90 h35 v10 h-35 z M90,90 h10 v10 h-10 z" />
-                </svg>
+                <!-- Logo Graphic -->
+                <img src="logo.jpg" alt="SmartLib App Logo" style="width: 100%; height: 100%; object-fit: contain;">
                 <div class="mockup-laser"></div>
               </div>
               <div class="mockup-status-badge">
@@ -417,7 +416,58 @@
     </div>
   </footer>
 
-  <!-- JavaScript Behavior -->
+  <div id="pwaInstallBtnPlaceholder" style="display: none;"></div>
+
+  <!-- PWA Installation Script -->
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker Registered'))
+          .catch(err => console.log('Service Worker Registration Failed', err));
+      });
+    }
+
+    // PWA Install Prompt Logic
+    let deferredPrompt;
+    const installBtn = document.getElementById('pwaInstallBtn');
+    const installBtnMobile = document.getElementById('pwaInstallBtnMobile');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    const handleInstallClick = async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        deferredPrompt = null;
+      } else {
+        alert("App installation is not available right now.\n\nPossible reasons:\n1. The app is already installed.\n2. You are opening the file directly instead of using a local server (like http://localhost:5000).\n3. Your browser doesn't support PWA.");
+      }
+    };
+
+    if(installBtn) installBtn.addEventListener('click', handleInstallClick);
+    if(installBtnMobile) installBtnMobile.addEventListener('click', handleInstallClick);
+
+    window.addEventListener('appinstalled', () => {
+      if(installBtn) {
+        installBtn.innerHTML = '<i class="fa-solid fa-check"></i> Installed';
+        installBtn.style.background = '#28a745';
+        setTimeout(() => { installBtn.style.display = 'none'; }, 3000);
+      }
+      if(installBtnMobile) {
+        installBtnMobile.innerHTML = '<i class="fa-solid fa-check"></i> Installed';
+        installBtnMobile.style.background = '#28a745';
+        setTimeout(() => { installBtnMobile.style.display = 'none'; }, 3000);
+      }
+    });
+  </script>
+
+  <!-- External Scripts -->
   <script src="js/landing.js"></script>
 </body>
 
