@@ -2,7 +2,7 @@
 // Admin Dashboard Frontend Client Logic
 
 // Configuration
-const API_URL = '';
+const API_URL = (window.location.protocol === 'file:' || (window.location.port !== '' && window.location.port !== '5000')) ? `http://${window.location.hostname || 'localhost'}:5000` : ''; // Automatically route to backend
 
 // State
 let token = localStorage.getItem('admin_token') || null;

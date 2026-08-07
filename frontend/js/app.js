@@ -2,7 +2,7 @@
 // Student Portal Frontend Client Logic
 
 // Configuration
-const API_URL = ''; // Relative path, works out-of-the-box when hosted on same port
+const API_URL = (window.location.protocol === 'file:' || (window.location.port !== '' && window.location.port !== '5000')) ? `http://${window.location.hostname || 'localhost'}:5000` : ''; // Automatically route to backend
 
 // State
 let token = localStorage.getItem('student_token') || null;
@@ -270,7 +270,9 @@ async function submitQRScan(qrContent) {
 
     if (res.ok && data.success) {
       const isEntry = data.action === 'entry';
-      showToast(data.message, 'success');
+      
+      // Show fancy success popup
+      showCustomLoginPopup(true, isEntry ? 'Entry Successful 🎉' : 'Exit Successful 🎉');
       
       // Play a nice success audio beep or micro animation
       playBeep(isEntry ? 880 : 440, 0.15); // Higher pitch for entry, lower for exit
@@ -311,6 +313,125 @@ function playBeep(frequency = 440, duration = 0.1) {
   }
 }
 
+// ==========================================
+// PINCH TO ZOOM & SCANNER LOGIC
+// ==========================================
+let currentZoom = 1;
+let minZoom = 1;
+let maxZoom = 3;
+let zoomStep = 0.1;
+let videoTrack = null;
+let useSoftwareZoom = false;
+let initialPinchDistance = null;
+let initialZoomAtPinchStart = 1;
+let zoomControlsEl = null;
+let zoomDisplayEl = null;
+
+function getDistance(touch1, touch2) {
+  return Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+}
+
+function updateZoom(newZoom) {
+  newZoom = Math.min(Math.max(newZoom, minZoom), maxZoom);
+  if (newZoom === currentZoom) return;
+  
+  currentZoom = newZoom;
+  zoomDisplayEl.textContent = currentZoom.toFixed(1) + 'x';
+  
+  if (useSoftwareZoom) {
+    const videoEl = document.querySelector('#reader video');
+    if (videoEl) {
+      videoEl.style.transform = `scale(${currentZoom})`;
+      videoEl.style.transformOrigin = 'center center';
+      videoEl.style.transition = 'transform 0.1s ease-out';
+    }
+  } else if (videoTrack) {
+    videoTrack.applyConstraints({
+      advanced: [{ zoom: currentZoom }]
+    }).catch(err => console.warn('Native zoom failed:', err));
+  }
+}
+
+function initZoomControls() {
+  zoomControlsEl = document.getElementById('zoomControls');
+  zoomDisplayEl = document.getElementById('zoomLevelDisplay');
+  const zoomInBtn = document.getElementById('zoomInBtn');
+  const zoomOutBtn = document.getElementById('zoomOutBtn');
+  const scannerViewfinder = document.querySelector('.scanner-viewfinder');
+  
+  if (!zoomControlsEl || !scannerViewfinder) return;
+  
+  zoomControlsEl.style.display = 'flex';
+  
+  // Polling for video track (html5-qrcode creates it asynchronously)
+  let retries = 10;
+  const pollVideo = setInterval(() => {
+    const videoEl = document.querySelector('#reader video');
+    if (videoEl && videoEl.srcObject && videoEl.srcObject.getVideoTracks().length > 0) {
+      clearInterval(pollVideo);
+      videoTrack = videoEl.srcObject.getVideoTracks()[0];
+      const capabilities = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
+      
+      if (capabilities.zoom) {
+        minZoom = capabilities.zoom.min || 1;
+        maxZoom = capabilities.zoom.max || 3;
+        zoomStep = capabilities.zoom.step || 0.1;
+        currentZoom = minZoom;
+        useSoftwareZoom = false;
+      } else {
+        useSoftwareZoom = true;
+        minZoom = 1; maxZoom = 4; currentZoom = 1;
+      }
+      zoomDisplayEl.textContent = currentZoom.toFixed(1) + 'x';
+    } else {
+      retries--;
+      if (retries <= 0) {
+        clearInterval(pollVideo);
+        useSoftwareZoom = true;
+        minZoom = 1; maxZoom = 4; currentZoom = 1;
+      }
+    }
+  }, 300);
+
+  // Button Listeners
+  if (zoomInBtn) zoomInBtn.onclick = () => updateZoom(currentZoom + (useSoftwareZoom ? 0.2 : zoomStep * 2));
+  if (zoomOutBtn) zoomOutBtn.onclick = () => updateZoom(currentZoom - (useSoftwareZoom ? 0.2 : zoomStep * 2));
+  
+  // Touch Listeners for Pinch to Zoom
+  scannerViewfinder.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+      initialZoomAtPinchStart = currentZoom;
+    }
+  }, { passive: false });
+
+  scannerViewfinder.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && initialPinchDistance) {
+      e.preventDefault();
+      const currentDistance = getDistance(e.touches[0], e.touches[1]);
+      const distanceRatio = currentDistance / initialPinchDistance;
+      
+      const newZoom = initialZoomAtPinchStart * distanceRatio;
+      updateZoom(newZoom);
+    }
+  }, { passive: false });
+  
+  scannerViewfinder.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      initialPinchDistance = null;
+    }
+  });
+}
+
+function resetZoomControls() {
+  if (zoomControlsEl) zoomControlsEl.style.display = 'none';
+  currentZoom = 1;
+  videoTrack = null;
+  const videoEl = document.querySelector('#reader video');
+  if (videoEl) videoEl.style.transform = 'scale(1)';
+}
+
 // Camera Scanner Implementation
 function startCameraScanner() {
   if (typeof Html5Qrcode === 'undefined') {
@@ -336,7 +457,10 @@ function startCameraScanner() {
     (errorMessage) => {
       // Verbose error logging omitted to avoid clogging console
     }
-  ).catch(err => {
+  ).then(() => {
+    // Camera is successfully started, initialize zoom
+    setTimeout(initZoomControls, 500); // Give the video element a moment to render
+  }).catch(err => {
     console.error('Camera start failed:', err);
     showToast('Failed to access device camera. Check permission.', 'error');
     stopCameraScanner();
@@ -351,6 +475,7 @@ function stopCameraScanner() {
     html5QrScanner.stop().then(() => {
       console.log('Camera stopped.');
       html5QrScanner = null;
+      resetZoomControls();
     }).catch(err => {
       console.error('Failed to stop camera:', err);
     });
@@ -689,7 +814,7 @@ function showCustomLoginPopup(isSuccess, message, callback) {
   
   const text = document.createElement('div');
   text.className = 'custom-login-text';
-  text.innerText = isSuccess ? 'Successfully!' : (message || 'Login failed.');
+  text.innerText = isSuccess ? (message || 'Successfully!') : (message || 'Login failed.');
   
   popup.appendChild(icon);
   popup.appendChild(text);
