@@ -1001,9 +1001,59 @@ if (cardExitsToday) {
 }
 
 // ==========================================
+// MOBILE NAVIGATION FAB & DRAWER CONTROLS
+// ==========================================
+const mobileNavFab = document.getElementById('mobileNavFab');
+const mobileNavFabIcon = document.getElementById('mobileNavFabIcon');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+const mobileSidebarClose = document.getElementById('mobileSidebarClose');
+const adminSidebar = document.getElementById('adminSidebar') || document.querySelector('.sidebar');
+
+function toggleMobileSidebar(forceState) {
+  if (!adminSidebar) return;
+  const isOpen = forceState !== undefined ? forceState : !adminSidebar.classList.contains('open');
+  
+  if (isOpen) {
+    adminSidebar.classList.add('open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+    if (mobileNavFab) mobileNavFab.classList.add('active');
+    if (mobileNavFabIcon) {
+      mobileNavFabIcon.classList.remove('fa-bars');
+      mobileNavFabIcon.classList.add('fa-xmark');
+    }
+  } else {
+    adminSidebar.classList.remove('open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+    if (mobileNavFab) mobileNavFab.classList.remove('active');
+    if (mobileNavFabIcon) {
+      mobileNavFabIcon.classList.remove('fa-xmark');
+      mobileNavFabIcon.classList.add('fa-bars');
+    }
+  }
+}
+
+if (mobileNavFab) {
+  mobileNavFab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMobileSidebar();
+  });
+}
+
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener('click', () => toggleMobileSidebar(false));
+}
+
+if (mobileSidebarClose) {
+  mobileSidebarClose.addEventListener('click', () => toggleMobileSidebar(false));
+}
+
+// ==========================================
 // ADMIN DASHBOARD SWITCH NAVIGATION
 // ==========================================
 function navigateTo(target) {
+  // Automatically close mobile sidebar when navigating
+  toggleMobileSidebar(false);
+
   // Reset all active classes
   menuDashBtn.classList.remove('active');
   menuReportsBtn.classList.remove('active');
@@ -1127,6 +1177,7 @@ adminLoginForm.addEventListener('submit', async (e) => {
 
 // Logout
 function logout() {
+  toggleMobileSidebar(false);
   if (socket) {
     socket.disconnect();
     socket = null;
@@ -1141,6 +1192,7 @@ adminLogoutBtn.addEventListener('click', logout);
 
 // Modals Triggers
 adminSettingsBtn.addEventListener('click', () => {
+  toggleMobileSidebar(false);
   adminSettingsModal.classList.add('active');
   loadAdminProfile();
 });

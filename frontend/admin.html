@@ -137,7 +137,7 @@
   <div class="app-container" id="adminDashboardContainer" style="display: none;">
     
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="adminSidebar">
       <div class="brand-section">
         <div class="brand-logo">
           <i class="fa-solid fa-book-open-reader"></i>
@@ -145,6 +145,9 @@
         <div class="brand-name">
           Smart Library<br><span style="font-size: 0.8rem; color: var(--primary);">Admin Board</span>
         </div>
+        <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation menu" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <ul class="sidebar-menu">
@@ -168,6 +171,14 @@
         </button>
       </div>
     </aside>
+
+    <!-- Mobile Floating Action Button (FAB) for Navigation Menu -->
+    <button class="mobile-nav-fab" id="mobileNavFab" aria-label="Toggle Navigation Menu" title="Open Navigation">
+      <i class="fa-solid fa-bars" id="mobileNavFabIcon"></i>
+    </button>
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Main Workspace -->
     <div class="main-wrapper">
