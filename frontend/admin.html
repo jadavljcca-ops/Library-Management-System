@@ -29,6 +29,9 @@
 
   <!-- QRious (for QR Code generation) -->
   <script src="js/qrious.min.js"></script>
+
+  <!-- SweetAlert2 Library -->
+  <script src="js/sweetalert2.all.min.js"></script>
   
   <style>
     .preview-table-input {
@@ -606,16 +609,47 @@
   <!-- ADMIN MODAL DIALOGS -->
   <!-- ========================================================== -->
   
-  <!-- ADMIN SETTINGS (CHANGE PASSWORD) -->
+  <!-- ADMIN SETTINGS (PROFILE & PASSWORD) -->
   <div class="modal-overlay" id="adminSettingsModal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 520px; width: 95%;">
       <div class="modal-header">
-        <h4 class="modal-title">Admin Account Settings</h4>
+        <h4 class="modal-title"><i class="fa-solid fa-user-gear" style="color: var(--primary); margin-right: 0.5rem;"></i> Admin Account Settings</h4>
         <button class="modal-close" id="closeAdminSettings">&times;</button>
       </div>
       
+      <!-- 1. Admin Profile Edit Form -->
+      <form id="adminProfileForm" style="margin-bottom: 2rem;">
+        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-id-badge"></i> Edit Profile Information
+        </h5>
+        
+        <div class="form-group">
+          <label for="adminSettingsName">Admin Full Name</label>
+          <input type="text" id="adminSettingsName" class="form-control" placeholder="e.g. Library Admin" required>
+        </div>
+
+        <div class="form-group">
+          <label for="adminSettingsEmail">Admin Email ID</label>
+          <input type="email" id="adminSettingsEmail" class="form-control" placeholder="e.g. admin@lj.edu" required>
+        </div>
+
+        <div class="form-group">
+          <label for="adminSettingsUsername">Admin Username</label>
+          <input type="text" id="adminSettingsUsername" class="form-control" placeholder="e.g. admin" required>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+          <button type="submit" class="btn btn-primary" id="saveAdminProfileBtn">
+            <i class="fa-solid fa-floppy-disk"></i> Save Profile Details
+          </button>
+        </div>
+      </form>
+
+      <!-- 2. Change Password Form -->
       <form id="adminChangePasswordForm">
-        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.25rem;">Change Password</h5>
+        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-key"></i> Change Password
+        </h5>
         
         <div class="form-group">
           <label for="adminOldPassword">Current Password</label>
@@ -632,8 +666,8 @@
           <input type="password" id="adminConfirmPassword" class="form-control" placeholder="••••••••" required>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-secondary" id="cancelAdminSettings">Cancel</button>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem;">
+          <button type="button" class="btn btn-secondary" id="cancelAdminSettings">Close</button>
           <button type="submit" class="btn btn-primary">Update Password</button>
         </div>
       </form>

@@ -196,19 +196,20 @@ app.post('/api/auth/register', async (req, res) => {
   } = req.body;
 
   // Validations
-  if (!name || !enrollment_no || !email || !mobile || !department || !course || !semester || !gender || !password) {
+  if (!name || !enrollment_no || !email || !mobile || !department || !course || !semester || !gender) {
     return res.status(400).json({ success: false, message: 'All registration fields are required.' });
   }
 
-  if (password !== confirmPassword) {
-    return res.status(400).json({ success: false, message: 'Passwords do not match.' });
-  }
+  const cleanEmail = String(email).trim().toLowerCase();
+  const cleanMobile = String(mobile).trim();
+  const cleanEnrollment = String(enrollment_no).trim();
+  const studentPassword = cleanMobile; // Student password is their registered mobile number
 
   try {
     // Check if enrollment number or email already exists
     const checkUser = await db.query(
-      'SELECT id FROM students WHERE enrollment_no = ? OR email = ?',
-      [enrollment_no, email]
+      'SELECT id FROM students WHERE LOWER(TRIM(enrollment_no)) = ? OR LOWER(TRIM(email)) = ?',
+      [cleanEnrollment.toLowerCase(), cleanEmail]
     );
 
     if (checkUser.rows.length > 0) {
@@ -216,13 +217,13 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(studentPassword, 10);
 
     // Insert student
     await db.query(
       `INSERT INTO students (name, enrollment_no, email, mobile, department, course, semester, gender, password, plain_password)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, enrollment_no, email, mobile, department, course, semester, gender, hashedPassword, password]
+      [name.trim(), cleanEnrollment, cleanEmail, cleanMobile, department.trim(), course.trim(), semester.trim(), gender.trim(), hashedPassword, studentPassword]
     );
 
     res.status(201).json({ success: true, message: 'Registration successful! You can now log in.' });
@@ -232,84 +233,178 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Universal Login (Student / Admin)
+// Universal / Unified Login (Student or Admin)
 app.post('/api/auth/login', async (req, res) => {
-  const { usernameOrEnrollment, password, role } = req.body;
+  const { usernameOrEnrollment, email, password } = req.body;
+  const identifier = String(usernameOrEnrollment || email || '').trim();
+  const inputPassword = String(password || '').trim();
 
-  if (!usernameOrEnrollment || !password || !role) {
-    return res.status(400).json({ success: false, message: 'Please provide credentials and role.' });
+  if (!identifier || !inputPassword) {
+    return res.status(400).json({ success: false, message: 'Please provide Email ID / User ID and Password.' });
   }
 
   try {
-    if (role === 'admin') {
-      // Admin Login
-      const result = await db.query('SELECT * FROM admins WHERE username = ? OR email = ?', [usernameOrEnrollment, usernameOrEnrollment]);
-      if (result.rows.length === 0) {
-        return res.status(400).json({ success: false, message: 'Admin credentials not found.' });
-      }
+    const cleanId = identifier.toLowerCase().trim();
 
-      const admin = result.rows[0];
-      const isMatch = await bcrypt.compare(password, admin.password);
-      if (!isMatch) {
-        return res.status(400).json({ success: false, message: 'Incorrect admin password.' });
-      }
-
-      // Generate JWT Token
-      const token = jwt.sign(
-        { id: admin.id, name: admin.name, username: admin.username, role: 'admin' },
-        JWT_SECRET,
-        { expiresIn: '1d' }
-      );
-
-      return res.json({
-        success: true,
-        message: 'Admin login successful!',
-        token,
-        user: { name: admin.name, username: admin.username, role: 'admin' }
-      });
-    } else {
-      // Student Login
-      const result = await db.query('SELECT * FROM students WHERE enrollment_no = ? OR email = ?', [usernameOrEnrollment, usernameOrEnrollment]);
-      if (result.rows.length === 0) {
-        return res.status(400).json({ success: false, message: 'Enrollment number or email is not registered.' });
-      }
-
-      const student = result.rows[0];
-      const isMatch = await bcrypt.compare(password, student.password);
-      if (!isMatch) {
-        return res.status(400).json({ success: false, message: 'Incorrect password.' });
-      }
-
-
-      // Generate JWT Token
-      const token = jwt.sign(
-        {
-          id: student.id,
-          name: student.name,
-          enrollment_no: student.enrollment_no,
-          email: student.email,
-          role: 'student'
-        },
-        JWT_SECRET,
-        { expiresIn: '1d' }
-      );
-
-      return res.json({
-        success: true,
-        message: 'Login successful!',
-        token,
-        user: {
-          id: student.id,
-          name: student.name,
-          enrollment_no: student.enrollment_no,
-          email: student.email,
-          role: 'student'
+    // 1. Check if Admin credentials match (by email or username)
+    const adminCheck = await db.query(
+      'SELECT * FROM admins WHERE LOWER(TRIM(email)) = ? OR LOWER(TRIM(username)) = ?',
+      [cleanId, cleanId]
+    );
+    if (adminCheck.rows.length > 0) {
+      for (const admin of adminCheck.rows) {
+        const isAdminMatch = await bcrypt.compare(inputPassword, admin.password);
+        if (isAdminMatch) {
+          const token = jwt.sign(
+            { id: admin.id, name: admin.name, username: admin.username, email: admin.email, role: 'admin' },
+            JWT_SECRET,
+            { expiresIn: '1d' }
+          );
+          return res.json({
+            success: true,
+            message: 'Admin login successful!',
+            token,
+            role: 'admin',
+            redirect: 'admin.html',
+            user: { id: admin.id, name: admin.name, username: admin.username, email: admin.email, role: 'admin' }
+          });
         }
-      });
+      }
     }
+
+    // 2. Check if Student credentials match (User ID = Email ID or Enrollment No, Password = Mobile Number)
+    const studentCheck = await db.query(
+      'SELECT * FROM students WHERE LOWER(TRIM(email)) = ? OR LOWER(TRIM(enrollment_no)) = ?',
+      [cleanId, cleanId]
+    );
+
+    if (studentCheck.rows.length > 0) {
+      const student = studentCheck.rows[0];
+      let isStudentMatch = false;
+
+      const cleanInput = inputPassword.trim();
+      const rawMobile = String(student.mobile || '').trim();
+      const digitsInput = cleanInput.replace(/\D/g, '');
+      const digitsMobile = rawMobile.replace(/\D/g, '');
+
+      // Check 1: Direct exact match with mobile
+      if (rawMobile && cleanInput === rawMobile) {
+        isStudentMatch = true;
+      }
+      // Check 2: Digits match (e.g. user typed 9624487630 or +919624487630 or 09624487630)
+      if (!isStudentMatch && digitsMobile && digitsInput) {
+        if (digitsInput === digitsMobile || digitsInput.endsWith(digitsMobile) || digitsMobile.endsWith(digitsInput)) {
+          isStudentMatch = true;
+        }
+      }
+      // Check 3: Plain password fallback
+      if (!isStudentMatch && student.plain_password && cleanInput === String(student.plain_password).trim()) {
+        isStudentMatch = true;
+      }
+      // Check 4: Bcrypt compare against password hash
+      if (!isStudentMatch && student.password) {
+        try {
+          isStudentMatch = await bcrypt.compare(cleanInput, student.password);
+        } catch (e) {}
+      }
+
+      if (isStudentMatch) {
+        const token = jwt.sign(
+          {
+            id: student.id,
+            name: student.name,
+            enrollment_no: student.enrollment_no,
+            email: student.email,
+            mobile: student.mobile,
+            role: 'student'
+          },
+          JWT_SECRET,
+          { expiresIn: '1d' }
+        );
+
+        return res.json({
+          success: true,
+          message: 'Student login successful!',
+          token,
+          role: 'student',
+          redirect: 'student.html',
+          user: {
+            id: student.id,
+            name: student.name,
+            enrollment_no: student.enrollment_no,
+            email: student.email,
+            mobile: student.mobile,
+            role: 'student'
+          }
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Incorrect password! (Note: Student password is your registered Mobile Number).'
+        });
+      }
+    }
+
+    // If neither matched
+    return res.status(400).json({
+      success: false,
+      message: 'Account not found. Please check your Email ID or register.'
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, message: 'Server error during login.' });
+  }
+});
+
+// Admin Profile APIs (Get and Update Admin Profile Settings)
+app.get('/api/admin/profile', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await db.query('SELECT id, name, email, username FROM admins WHERE id = ?', [req.user.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+    res.json({ success: true, admin: result.rows[0] });
+  } catch (error) {
+    console.error('Fetch admin profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error retrieving admin profile.' });
+  }
+});
+
+app.put('/api/admin/profile', authenticateToken, requireAdmin, async (req, res) => {
+  const { name, email, username } = req.body;
+
+  if (!name || !email) {
+    return res.status(400).json({ success: false, message: 'Name and Email are required.' });
+  }
+
+  const cleanName = String(name).trim();
+  const cleanEmail = String(email).trim().toLowerCase();
+  const cleanUsername = username ? String(username).trim() : cleanEmail;
+
+  try {
+    // Check if another admin already uses this email or username
+    const duplicateCheck = await db.query(
+      'SELECT id FROM admins WHERE (email = ? OR username = ?) AND id != ?',
+      [cleanEmail, cleanUsername, req.user.id]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(400).json({ success: false, message: 'Email or Username is already used by another admin.' });
+    }
+
+    await db.query(
+      'UPDATE admins SET name = ?, email = ?, username = ? WHERE id = ?',
+      [cleanName, cleanEmail, cleanUsername, req.user.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Admin profile updated successfully!',
+      admin: { id: req.user.id, name: cleanName, email: cleanEmail, username: cleanUsername }
+    });
+  } catch (error) {
+    console.error('Update admin profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error updating admin profile.' });
   }
 });
 
@@ -336,8 +431,15 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// Change Password
+// Change Password (Admin Only - Students cannot change password)
 app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
+  if (req.user.role === 'student') {
+    return res.status(403).json({
+      success: false,
+      message: 'Students cannot change their password. Password is permanently set to your mobile number.'
+    });
+  }
+
   const { oldPassword, newPassword } = req.body;
 
   if (!oldPassword || !newPassword) {
@@ -622,6 +724,14 @@ app.get('/api/admin/dashboard-stats', authenticateToken, requireAdmin, async (re
         GROUP BY HOUR(entry_time)
         ORDER BY hr
       `;
+    } else if (db.dbType === 'postgres' || db.dbType === 'neon') {
+      hourlyQuery = `
+        SELECT CAST(SUBSTR(entry_time, 1, 2) AS INTEGER) AS hr, COUNT(*) AS count 
+        FROM attendance 
+        WHERE entry_date = ?
+        GROUP BY 1
+        ORDER BY hr
+      `;
     } else {
       hourlyQuery = `
         SELECT CAST(SUBSTR(entry_time, 1, 2) AS INTEGER) AS hr, COUNT(*) AS count 
@@ -679,8 +789,12 @@ app.get('/api/admin/attendance-records', authenticateToken, requireAdmin, async 
   const params = [];
 
   if (search) {
-    // MySQL supports LIKE. SQLite supports LIKE (case-insensitive by default)
-    queryStr += ' AND (s.name LIKE ? OR s.enrollment_no LIKE ?)';
+    // MySQL/SQLite support LIKE. PostgreSQL uses ILIKE for case-insensitive matching
+    if (db.dbType === 'postgres' || db.dbType === 'neon') {
+      queryStr += ' AND (s.name ILIKE ? OR s.enrollment_no ILIKE ?)';
+    } else {
+      queryStr += ' AND (s.name LIKE ? OR s.enrollment_no LIKE ?)';
+    }
     params.push(`%${search}%`, `%${search}%`);
   }
 
@@ -751,24 +865,29 @@ app.post('/api/admin/students/import', authenticateToken, requireAdmin, async (r
       const { name, enrollment_no, email, mobile, department, course, semester, gender, password } = student;
       
       // Basic validation
-      if (!name || !enrollment_no || !email || !mobile || !department || !course || !semester || !gender || !password) {
+      if (!name || !enrollment_no || !email || !mobile || !department || !course || !semester || !gender) {
         skippedCount++;
-        errors.push(`Row for ${name || 'unknown'} is missing required fields (including password).`);
+        errors.push(`Row for ${name || 'unknown'} is missing required fields.`);
         continue;
       }
 
-      const plainPassword = String(password).trim();
+      // Password for students is always their registered mobile number
+      const cleanMobile = String(mobile).trim();
+      const cleanEmail = String(email).trim().toLowerCase();
+      const cleanEnrollment = String(enrollment_no).trim();
+      const plainPassword = cleanMobile;
+
       if (!plainPassword) {
         skippedCount++;
-        errors.push(`Row for ${name || 'unknown'} has an empty password.`);
+        errors.push(`Row for ${name || 'unknown'} has an empty mobile number.`);
         continue;
       }
 
       try {
         // Check duplicate enrollment number or email
         const checkUser = await db.query(
-          'SELECT id FROM students WHERE enrollment_no = ? OR email = ?',
-          [enrollment_no, email]
+          'SELECT id FROM students WHERE LOWER(TRIM(enrollment_no)) = ? OR LOWER(TRIM(email)) = ?',
+          [cleanEnrollment.toLowerCase(), cleanEmail]
         );
 
         if (checkUser.rows.length > 0) {

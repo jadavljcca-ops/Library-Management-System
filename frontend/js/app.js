@@ -20,23 +20,10 @@ const loginFormCard = document.getElementById('loginFormCard');
 const registerFormCard = document.getElementById('registerFormCard');
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
-const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-
 // Navigation triggers
 const showRegisterBtn = document.getElementById('showRegisterBtn');
 const showLoginBtn = document.getElementById('showLoginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
-const editProfileBtn = document.getElementById('editProfileBtn');
-
-// Modals
-const forgotPasswordModal = document.getElementById('forgotPasswordModal');
-const settingsModal = document.getElementById('settingsModal');
-const closeForgotModal = document.getElementById('closeForgotModal');
-const cancelForgotBtn = document.getElementById('cancelForgotBtn');
-const closeSettingsModal = document.getElementById('closeSettingsModal');
-const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
-const changePasswordForm = document.getElementById('changePasswordForm');
 
 // Themes
 const themeToggleAuth = document.getElementById('themeToggleAuth');
@@ -271,23 +258,121 @@ async function submitQRScan(qrContent) {
     if (res.ok && data.success) {
       const isEntry = data.action === 'entry';
       
-      // Show fancy success popup
-      showCustomLoginPopup(true, isEntry ? 'Entry Successful 🎉' : 'Exit Successful 🎉');
-      
-      // Play a nice success audio beep or micro animation
-      playBeep(isEntry ? 880 : 440, 0.15); // Higher pitch for entry, lower for exit
+      // Play sweet melodious alarm tone
+      playSweetAlarm(isEntry ? 'entry' : 'exit');
+
+      // Trigger SweetAlert popup
+      if (typeof Swal !== 'undefined') {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        Swal.fire({
+          icon: isEntry ? 'success' : 'info',
+          title: isEntry ? 'Entry Recorded! 📚' : 'Exit Recorded! 🚪',
+          html: `
+            <div style="text-align: center; padding: 10px 5px;">
+              <h3 style="margin-bottom: 8px; color: ${isEntry ? '#10b981' : '#6366f1'}; font-size: 1.25rem; font-weight: 700;">
+                ${isEntry ? 'Welcome to the Library!' : 'Visit Again Soon!'}
+              </h3>
+              <p style="margin: 6px 0; font-size: 0.95rem; color: ${isDark ? '#cbd5e1' : '#475569'};">
+                ${isEntry ? 'Your entry attendance has been registered successfully.' : `Total Session Duration: <b style="color: #f59e0b;">${data.data?.duration || 'Recorded'}</b>`}
+              </p>
+              <div style="display: inline-block; margin: 8px 0; padding: 4px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; background: ${isEntry ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; color: ${isEntry ? '#10b981' : '#6366f1'};">
+                Status: ${isEntry ? '🟢 INSIDE LIBRARY' : '🔴 EXITED'}
+              </div>
+              <p style="margin-top: 8px; font-size: 0.85rem; color: #94a3b8;">
+                Time: ${isEntry ? (data.data?.entry_time || new Date().toLocaleTimeString()) : (data.data?.exit_time || new Date().toLocaleTimeString())}
+              </p>
+            </div>
+          `,
+          timer: 4000,
+          timerProgressBar: true,
+          showConfirmButton: true,
+          confirmButtonText: 'Great!',
+          confirmButtonColor: isEntry ? '#10b981' : '#6366f1',
+          background: isDark ? '#131b2e' : '#ffffff',
+          color: isDark ? '#f1f5f9' : '#0f172a'
+        });
+      } else {
+        showCustomLoginPopup(true, isEntry ? 'Entry Successful 🎉' : 'Exit Successful 🎉');
+      }
 
       // Refresh status and dashboard
       await checkActiveSession();
     } else {
-      showToast(data.message || 'Scan failed.', 'error');
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Scan Failed',
+          text: data.message || 'QR code verification failed.',
+          timer: 3500,
+          timerProgressBar: true,
+          confirmButtonColor: '#ef4444'
+        });
+      } else {
+        showToast(data.message || 'Scan failed.', 'error');
+      }
       playBeep(220, 0.4); // Low buzzer sound for error
     }
   } catch (error) {
     console.error('Scan submission error:', error);
-    showToast('Network error processing scanner session.', 'error');
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: 'Connection Error',
+        text: 'Network error processing scanner session.',
+        confirmButtonColor: '#ef4444'
+      });
+    } else {
+      showToast('Network error processing scanner session.', 'error');
+    }
   } finally {
     showLoader(false);
+  }
+}
+
+// Sweet melodious chime alarm for student entry / exit
+function playSweetAlarm(type = 'entry') {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const now = audioCtx.currentTime;
+
+    if (type === 'entry') {
+      // Pleasant rising melody chime (C5 -> E5 -> G5)
+      const notes = [523.25, 659.25, 783.99];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.22);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.09);
+        osc.stop(now + idx * 0.09 + 0.22);
+      });
+    } else {
+      // Gentle descending chime for exit (G5 -> E5 -> C5)
+      const notes = [783.99, 659.25, 523.25];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        gain.gain.setValueAtTime(0.15, now + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.26);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 0.26);
+      });
+    }
+  } catch (e) {
+    console.warn('Audio alarm playback notice:', e);
   }
 }
 
@@ -606,25 +691,34 @@ if (showLoginBtn) {
 // Forms Submission
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const usernameOrEnrollment = document.getElementById('loginIdentifier').value;
-  const password = document.getElementById('loginPassword').value;
+  const usernameOrEnrollment = (document.getElementById('loginIdentifier').value || '').trim();
+  const password = (document.getElementById('loginPassword').value || '').trim();
 
   showLoader(true);
   try {
     const res = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usernameOrEnrollment, password, role: 'student' })
+      body: JSON.stringify({ usernameOrEnrollment, email: usernameOrEnrollment, password })
     });
     const data = await res.json();
 
     if (res.ok && data.success) {
-      token = data.token;
-      localStorage.setItem('student_token', token);
-      loginForm.reset();
-      showCustomLoginPopup(true, 'Successfully!', () => {
-        showDashboardScreen();
-      });
+      if (data.role === 'student') {
+        token = data.token;
+        localStorage.setItem('student_token', token);
+        loginForm.reset();
+        showCustomLoginPopup(true, 'Welcome Student!', () => {
+          showDashboardScreen();
+        });
+      } else if (data.role === 'admin') {
+        // Admin logged in through student portal -> Redirect to admin portal
+        localStorage.setItem('admin_token', data.token);
+        loginForm.reset();
+        showCustomLoginPopup(true, 'Welcome Admin!', () => {
+          window.location.href = 'admin.html';
+        });
+      }
     } else {
       showCustomLoginPopup(false, data.message || 'Login failed.');
     }
@@ -705,88 +799,7 @@ function logout() {
 
 logoutBtn.addEventListener('click', logout);
 
-// Modals Triggers
-forgotPasswordBtn.addEventListener('click', (e) => {
-  e.preventDefault();
-  forgotPasswordModal.classList.add('active');
-});
 
-closeForgotModal.addEventListener('click', () => forgotPasswordModal.classList.remove('active'));
-cancelForgotBtn.addEventListener('click', () => forgotPasswordModal.classList.remove('active'));
-
-editProfileBtn.addEventListener('click', () => {
-  settingsModal.classList.add('active');
-});
-
-closeSettingsModal.addEventListener('click', () => settingsModal.classList.remove('active'));
-cancelSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
-
-// Forms inside Modals
-forgotPasswordForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const enrollmentOrEmail = document.getElementById('forgotIdentifier').value;
-
-  showLoader(true);
-  try {
-    const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enrollmentOrEmail })
-    });
-    const data = await res.json();
-
-    if (res.ok && data.success) {
-      showToast(data.message, 'success');
-      forgotPasswordForm.reset();
-      forgotPasswordModal.classList.remove('active');
-    } else {
-      showToast(data.message || 'Account not found.', 'error');
-    }
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    showToast('Failed to submit recover request.', 'error');
-  } finally {
-    showLoader(false);
-  }
-});
-
-changePasswordForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const oldPassword = document.getElementById('settingsOldPassword').value;
-  const newPassword = document.getElementById('settingsNewPassword').value;
-  const confirmPassword = document.getElementById('settingsConfirmPassword').value;
-
-  if (newPassword !== confirmPassword) {
-    showToast('New passwords do not match.', 'error');
-    return;
-  }
-
-  showLoader(true);
-  try {
-    const res = await fetch(`${API_URL}/api/auth/change-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ oldPassword, newPassword })
-    });
-    const data = await res.json();
-
-    if (res.ok && data.success) {
-      showToast(data.message, 'success');
-      changePasswordForm.reset();
-      settingsModal.classList.remove('active');
-    } else {
-      showToast(data.message || 'Update failed.', 'error');
-    }
-  } catch (error) {
-    console.error('Password change error:', error);
-    showToast('Failed to update password.', 'error');
-  } finally {
-    showLoader(false);
-  }
-});
 
 // App Launch
 window.addEventListener('DOMContentLoaded', () => {

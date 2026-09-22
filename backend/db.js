@@ -1,5 +1,5 @@
 // db.js
-// Database abstraction layer supporting both SQLite and MySQL.
+// Database abstraction layer supporting SQLite, MySQL, and PostgreSQL (Neon Cloud).
 
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
@@ -7,11 +7,37 @@ const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-const dbType = (process.env.DB_TYPE || 'sqlite').toLowerCase();
+const rawType = process.env.DB_TYPE ? process.env.DB_TYPE.toLowerCase() : '';
+const dbType = rawType || (process.env.DATABASE_URL ? 'postgres' : 'sqlite');
 let dbInstance = null;
 
 // Initialize connection
-if (dbType === 'mysql') {
+if (dbType === 'postgres' || dbType === 'neon') {
+  const { Pool, types } = require('pg');
+  // Parse int8 (BIGINT count) as standard integer
+  types.setTypeParser(20, (val) => parseInt(val, 10));
+
+  const connectionString = process.env.DATABASE_URL || 
+    `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASS || ''}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'library_system'}`;
+
+  const isCloudOrSsl = connectionString.includes('neon.tech') || 
+                       connectionString.includes('sslmode=require') || 
+                       process.env.DB_SSL === 'true';
+
+  dbInstance = new Pool({
+    connectionString,
+    ssl: isCloudOrSsl ? { rejectUnauthorized: false } : undefined,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000
+  });
+
+  dbInstance.on('error', (err) => {
+    console.error('Unexpected PostgreSQL Pool Error:', err);
+  });
+
+  console.log('Database: Connected to PostgreSQL (Neon Cloud)');
+} else if (dbType === 'mysql') {
   const mysql = require('mysql2');
   dbInstance = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
@@ -35,10 +61,55 @@ if (dbType === 'mysql') {
   });
 }
 
+// Convert ? parameter placeholders to $1, $2, ... for PostgreSQL
+function toPostgresSql(sql) {
+  let paramIndex = 1;
+  let inQuotes = false;
+  let result = '';
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    if (ch === "'") {
+      inQuotes = !inQuotes;
+      result += ch;
+    } else if (ch === '?' && !inQuotes) {
+      result += `$${paramIndex++}`;
+    } else {
+      result += ch;
+    }
+  }
+  return result;
+}
+
 // Promisified query function
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
-    if (dbType === 'mysql') {
+    if (dbType === 'postgres' || dbType === 'neon') {
+      let pgSql = toPostgresSql(sql);
+      const trimmedUpper = pgSql.trim().toUpperCase();
+
+      // Automatically append RETURNING id for INSERT queries if not already present
+      if (trimmedUpper.startsWith('INSERT INTO') && !trimmedUpper.includes('RETURNING')) {
+        if (/\bINSERT\s+INTO\s+(students|attendance|admins)\b/i.test(pgSql)) {
+          pgSql += ' RETURNING id';
+        }
+      }
+
+      // Ensure undefined params are converted to null
+      const safeParams = params.map(p => (p === undefined ? null : p));
+
+      dbInstance.query(pgSql, safeParams, (err, res) => {
+        if (err) return reject(err);
+        const insertId = (res.rows && res.rows.length > 0 && res.rows[0].id !== undefined)
+          ? res.rows[0].id 
+          : null;
+
+        resolve({
+          rows: res.rows || [],
+          insertId,
+          affectedRows: res.rowCount || 0
+        });
+      });
+    } else if (dbType === 'mysql') {
       dbInstance.query(sql, params, (err, results) => {
         if (err) return reject(err);
         
@@ -75,7 +146,58 @@ function query(sql, params = []) {
 // Database schema initialization
 async function initDatabase() {
   try {
-    if (dbType === 'mysql') {
+    if (dbType === 'postgres' || dbType === 'neon') {
+      // PostgreSQL / Neon tables
+      await query(`
+        CREATE TABLE IF NOT EXISTS students (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          enrollment_no VARCHAR(255) UNIQUE NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          mobile VARCHAR(255) NOT NULL,
+          department VARCHAR(255) NOT NULL,
+          course VARCHAR(255) NOT NULL,
+          semester VARCHAR(255) NOT NULL,
+          gender VARCHAR(255) NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          plain_password VARCHAR(255) DEFAULT 'student123'
+        )
+      `);
+
+      await query(`
+        CREATE TABLE IF NOT EXISTS attendance (
+          id SERIAL PRIMARY KEY,
+          student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+          entry_date VARCHAR(255) NOT NULL,
+          entry_time VARCHAR(255) NOT NULL,
+          exit_date VARCHAR(255),
+          exit_time VARCHAR(255),
+          duration VARCHAR(255),
+          status VARCHAR(255) DEFAULT 'Inside',
+          entry_latitude DOUBLE PRECISION,
+          entry_longitude DOUBLE PRECISION,
+          entry_location_name TEXT,
+          distance_meters DOUBLE PRECISION
+        )
+      `);
+
+      await query(`
+        CREATE TABLE IF NOT EXISTS admins (
+          id SERIAL PRIMARY KEY,
+          username VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL
+        )
+      `);
+
+      await query(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key_name VARCHAR(255) PRIMARY KEY,
+          value_text TEXT
+        )
+      `);
+    } else if (dbType === 'mysql') {
       // Create MySQL tables
       await query(`
         CREATE TABLE IF NOT EXISTS students (
@@ -176,7 +298,9 @@ async function initDatabase() {
 
     // Migration to add plain_password to existing databases
     try {
-      if (dbType === 'mysql') {
+      if (dbType === 'postgres' || dbType === 'neon') {
+        await query("ALTER TABLE students ADD COLUMN IF NOT EXISTS plain_password VARCHAR(255) DEFAULT 'student123'");
+      } else if (dbType === 'mysql') {
         await query("ALTER TABLE students ADD COLUMN plain_password VARCHAR(255) DEFAULT 'student123'");
       } else {
         await query("ALTER TABLE students ADD COLUMN plain_password TEXT DEFAULT 'student123'");
@@ -188,7 +312,12 @@ async function initDatabase() {
 
     // Migration to add location columns to attendance table
     try {
-      if (dbType === 'mysql') {
+      if (dbType === 'postgres' || dbType === 'neon') {
+        await query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS entry_latitude DOUBLE PRECISION");
+        await query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS entry_longitude DOUBLE PRECISION");
+        await query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS entry_location_name TEXT");
+        await query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS distance_meters DOUBLE PRECISION");
+      } else if (dbType === 'mysql') {
         await query("ALTER TABLE attendance ADD COLUMN entry_latitude DOUBLE");
         await query("ALTER TABLE attendance ADD COLUMN entry_longitude DOUBLE");
         await query("ALTER TABLE attendance ADD COLUMN entry_location_name VARCHAR(500)");
@@ -216,6 +345,23 @@ async function initDatabase() {
       console.error('Error seeding default settings:', e);
     }
 
+    // Sync student passwords to mobile numbers as requested
+    try {
+      await query('UPDATE students SET email = LOWER(TRIM(email)), mobile = TRIM(mobile) WHERE email IS NOT NULL');
+
+      const studentRows = await query('SELECT id, mobile, plain_password FROM students WHERE mobile IS NOT NULL AND mobile != \'\'');
+      for (const st of studentRows.rows) {
+        const cleanMobile = String(st.mobile).trim();
+        if (cleanMobile) {
+          const hashedMobile = await bcrypt.hash(cleanMobile, 10);
+          await query('UPDATE students SET password = ?, plain_password = ? WHERE id = ?', [hashedMobile, cleanMobile, st.id]);
+        }
+      }
+      console.log('Database Sync: Verified all student passwords are set to their mobile numbers.');
+    } catch (e) {
+      console.error('Error syncing student passwords to mobile numbers:', e);
+    }
+
     console.log('Database tables verified/created successfully.');
     await seedAdmin();
   } catch (error) {
@@ -226,14 +372,14 @@ async function initDatabase() {
 // Seed admin user
 async function seedAdmin() {
   try {
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin@lj.edu';
     const result = await query('SELECT * FROM admins WHERE username = ?', [adminUsername]);
     
     if (result.rows.length === 0) {
       console.log('Seeding default admin account...');
       const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
       const adminName = process.env.ADMIN_NAME || 'Library Admin';
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@library.com';
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@lj.edu';
       
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
       

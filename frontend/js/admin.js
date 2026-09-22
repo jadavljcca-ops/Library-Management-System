@@ -73,6 +73,8 @@ const adminSettingsModal = document.getElementById('adminSettingsModal');
 const closeAdminSettings = document.getElementById('closeAdminSettings');
 const cancelAdminSettings = document.getElementById('cancelAdminSettings');
 const adminChangePasswordForm = document.getElementById('adminChangePasswordForm');
+const adminProfileForm = document.getElementById('adminProfileForm');
+const adminProfileName = document.getElementById('adminProfileName');
 
 // Registered Students Modal & Cards
 const registeredStudentsModal = document.getElementById('registeredStudentsModal');
@@ -474,16 +476,13 @@ function initSocket() {
     // 1. Add alert to Live Activity panel
     addLiveAlert(record, 'entry');
 
-    // 2. Play subtle sound indicator
-    playBeep(880, 0.15);
+    // 2. SweetAlert & Sweet Alarm notification (replaces toaster)
+    showEntryExitSweetAlert('entry', record);
 
-    // 3. Show Toast notification
-    showToast(`Student Entry: ${record.name} (${record.enrollment_no}) entered.`, 'success');
-
-    // 4. Update stats charts
+    // 3. Update stats charts
     fetchDashboardStats();
 
-    // 5. Append row to records if active
+    // 4. Append row to records if active
     if (sectionReports.style.display === 'block') {
       fetchAttendanceRecords(getFilterValues());
     }
@@ -494,16 +493,13 @@ function initSocket() {
     // 1. Add alert to Live Activity panel
     addLiveAlert(record, 'exit');
 
-    // 2. Play sound indicator
-    playBeep(440, 0.15);
+    // 2. SweetAlert & Sweet Alarm notification (replaces toaster)
+    showEntryExitSweetAlert('exit', record);
 
-    // 3. Show Toast notification
-    showToast(`Student Exit: ${record.name} (${record.enrollment_no}) exited.`, 'info');
-
-    // 4. Update stats charts
+    // 3. Update stats charts
     fetchDashboardStats();
 
-    // 5. Append row to records if active
+    // 4. Append row to records if active
     if (sectionReports.style.display === 'block') {
       fetchAttendanceRecords(getFilterValues());
     }
@@ -538,6 +534,93 @@ function addLiveAlert(record, type) {
   // Crop list size to keep only last 10 entries
   if (realTimeAlertsList.children.length > 10) {
     realTimeAlertsList.lastChild.remove();
+  }
+}
+
+// Sweet melodious chime alarm for student entry / exit
+function playSweetAlarm(type = 'entry') {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const now = audioCtx.currentTime;
+
+    if (type === 'entry') {
+      // Pleasant rising melody chime (C5 -> E5 -> G5)
+      const notes = [523.25, 659.25, 783.99];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.22);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.09);
+        osc.stop(now + idx * 0.09 + 0.22);
+      });
+    } else {
+      // Gentle descending chime for exit (G5 -> E5 -> C5)
+      const notes = [783.99, 659.25, 523.25];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        gain.gain.setValueAtTime(0.15, now + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.26);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 0.26);
+      });
+    }
+  } catch (e) {
+    console.warn('Audio alarm notice:', e);
+  }
+}
+
+// SweetAlert popup replacing toaster for entry / exit
+function showEntryExitSweetAlert(type, record) {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const isEntry = type === 'entry';
+
+  // Play sweet melodious alarm
+  playSweetAlarm(type);
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: isEntry ? 'success' : 'info',
+      title: isEntry ? 'Student Entry Registered! 📖' : 'Student Exit Registered! 🚪',
+      html: `
+        <div style="text-align: left; background: ${isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc'}; padding: 14px 18px; border-radius: 12px; margin-top: 10px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 1.15rem; font-weight: 700; color: ${isEntry ? '#10b981' : '#6366f1'};">${record.name || 'Student'}</span>
+            <span style="font-size: 0.8rem; padding: 3px 10px; border-radius: 12px; font-weight: 700; background: ${isEntry ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; color: ${isEntry ? '#10b981' : '#6366f1'};">
+              ${isEntry ? '🟢 INSIDE' : '🔴 EXITED'}
+            </span>
+          </div>
+          <div style="font-size: 0.92rem; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
+            <div><strong>Enrollment No:</strong> <code style="font-size: 0.9rem; font-weight: 600;">${record.enrollment_no || 'N/A'}</code></div>
+            ${record.department ? `<div><strong>Department:</strong> ${record.department} ${record.course ? `(${record.course})` : ''}</div>` : ''}
+            <div><strong>Time:</strong> ${isEntry ? (record.entry_time || '-') : (record.exit_time || '-')}</div>
+            ${!isEntry && record.duration ? `<div><strong>Duration:</strong> <span style="font-weight: 700; color: #f59e0b;">${record.duration}</span></div>` : ''}
+          </div>
+        </div>
+      `,
+      timer: 4000,
+      timerProgressBar: true,
+      showConfirmButton: true,
+      confirmButtonText: 'Dismiss',
+      confirmButtonColor: isEntry ? '#10b981' : '#6366f1',
+      background: isDark ? '#131b2e' : '#ffffff',
+      color: isDark ? '#f1f5f9' : '#0f172a',
+      backdrop: 'rgba(0,0,0,0.35)'
+    });
   }
 }
 
@@ -973,25 +1056,35 @@ function showDashboardScreen() {
 // Login
 adminLoginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const usernameOrEnrollment = document.getElementById('adminUsername').value;
-  const password = document.getElementById('adminPassword').value;
+  const usernameOrEnrollment = (document.getElementById('adminUsername').value || '').trim();
+  const password = (document.getElementById('adminPassword').value || '').trim();
 
   showLoader(true);
   try {
     const res = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usernameOrEnrollment, password, role: 'admin' })
+      body: JSON.stringify({ usernameOrEnrollment, email: usernameOrEnrollment, password })
     });
     const data = await res.json();
 
     if (res.ok && data.success) {
-      token = data.token;
-      localStorage.setItem('admin_token', token);
-      adminLoginForm.reset();
-      showCustomLoginPopup(true, 'Successfully!', () => {
-        showDashboardScreen();
-      });
+      if (data.role === 'admin') {
+        token = data.token;
+        localStorage.setItem('admin_token', token);
+        adminLoginForm.reset();
+        showCustomLoginPopup(true, 'Welcome Admin!', () => {
+          showDashboardScreen();
+          loadAdminProfile();
+        });
+      } else if (data.role === 'student') {
+        // Student logged in through admin screen -> Redirect to student portal
+        localStorage.setItem('student_token', data.token);
+        adminLoginForm.reset();
+        showCustomLoginPopup(true, 'Welcome Student!', () => {
+          window.location.href = 'student.html';
+        });
+      }
     } else {
       showCustomLoginPopup(false, data.message || 'Authentication rejected.');
     }
@@ -1020,9 +1113,91 @@ adminLogoutBtn.addEventListener('click', logout);
 // Modals Triggers
 adminSettingsBtn.addEventListener('click', () => {
   adminSettingsModal.classList.add('active');
+  loadAdminProfile();
 });
 closeAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
 cancelAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
+
+// Load current Admin Profile information
+async function loadAdminProfile() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_URL}/api/admin/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.admin) {
+      const nameInput = document.getElementById('adminSettingsName');
+      const emailInput = document.getElementById('adminSettingsEmail');
+      const usernameInput = document.getElementById('adminSettingsUsername');
+      if (nameInput) nameInput.value = data.admin.name || '';
+      if (emailInput) emailInput.value = data.admin.email || '';
+      if (usernameInput) usernameInput.value = data.admin.username || '';
+      if (adminProfileName) {
+        adminProfileName.textContent = data.admin.name || 'Library Admin';
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching admin profile:', err);
+  }
+}
+
+// Update Admin Profile (Name, Email ID, Username)
+if (adminProfileForm) {
+  adminProfileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('adminSettingsName').value.trim();
+    const email = document.getElementById('adminSettingsEmail').value.trim();
+    const username = document.getElementById('adminSettingsUsername').value.trim();
+
+    showLoader(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, email, username })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        if (adminProfileName) {
+          adminProfileName.textContent = data.admin.name;
+        }
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Profile Updated! ✨',
+            text: data.message || 'Admin profile saved successfully.',
+            timer: 3000,
+            timerProgressBar: true,
+            confirmButtonColor: '#6366f1'
+          });
+        } else {
+          showToast(data.message || 'Admin profile saved.', 'success');
+        }
+      } else {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Update Failed',
+            text: data.message || 'Could not update profile.',
+            confirmButtonColor: '#ef4444'
+          });
+        } else {
+          showToast(data.message || 'Failed to update profile.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Admin profile update error:', error);
+      showToast('Connection error updating profile.', 'error');
+    } finally {
+      showLoader(false);
+    }
+  });
+}
 
 adminChangePasswordForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1048,7 +1223,18 @@ adminChangePasswordForm.addEventListener('submit', async (e) => {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      showToast(data.message, 'success');
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Password Changed!',
+          text: data.message,
+          timer: 3000,
+          timerProgressBar: true,
+          confirmButtonColor: '#10b981'
+        });
+      } else {
+        showToast(data.message, 'success');
+      }
       adminChangePasswordForm.reset();
       adminSettingsModal.classList.remove('active');
     } else {

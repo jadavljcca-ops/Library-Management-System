@@ -4,7 +4,8 @@
   "description": "Smart Library QR Entry Management System",
   "main": "backend/server.js",
   "scripts": {
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -13,6 +14,7 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.9.2",
+    "pg": "^8.23.0",
     "socket.io": "^4.7.4",
     "sqlite3": "^5.1.7"
   }
