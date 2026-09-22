@@ -2,7 +2,22 @@
 // Student Portal Frontend Client Logic
 
 // Configuration
-const API_URL = (window.location.protocol === 'file:' || (window.location.port !== '' && window.location.port !== '5000')) ? `http://${window.location.hostname || 'localhost'}:5000` : ''; // Automatically route to backend
+// If your backend is hosted online (e.g. Render / Railway), enter its URL below:
+const BACKEND_URL = ''; 
+
+function getApiBaseUrl() {
+  if (BACKEND_URL) return BACKEND_URL.replace(/\/$/, '');
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (isLocal) {
+    return window.location.port === '5000' ? '' : `http://${window.location.hostname}:5000`;
+  }
+  if (window.location.protocol === 'file:') {
+    return 'http://localhost:5000';
+  }
+  return '';
+}
+
+const API_URL = getApiBaseUrl();
 
 // State
 let token = localStorage.getItem('student_token') || null;
@@ -701,7 +716,18 @@ loginForm.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usernameOrEnrollment, email: usernameOrEnrollment, password })
     });
-    const data = await res.json();
+    const contentType = res.headers.get('content-type');
+    let data;
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const isGitHub = window.location.hostname.includes('github.io');
+      const msg = isGitHub 
+        ? 'GitHub Pages cannot run Node.js backend. Please open the system at http://localhost:5000 on your computer, or host the backend on Render/Railway.' 
+        : `Server returned non-JSON response (${res.status}). Ensure backend is running.`;
+      showCustomLoginPopup(false, msg);
+      return;
+    }
 
     if (res.ok && data.success) {
       if (data.role === 'student') {
@@ -724,7 +750,10 @@ loginForm.addEventListener('submit', async (e) => {
     }
   } catch (error) {
     console.error('Login error:', error);
-    showToast('Server unavailable. Please try later.', 'error');
+    const isGitHub = window.location.hostname.includes('github.io');
+    showCustomLoginPopup(false, isGitHub 
+      ? 'GitHub Pages only hosts static files. To use the app, run the backend and open http://localhost:5000' 
+      : (error.message || 'Server unavailable. Please try later.'));
   } finally {
     showLoader(false);
   }
