@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Student Portal - Smart Library QR System</title>
   
   <!-- PWA Manifest & Icons -->
@@ -89,7 +89,12 @@
           </div>
           <div class="form-group">
             <label for="loginPassword">Password (Mobile Number)</label>
-            <input type="password" id="loginPassword" class="form-control" placeholder="Enter your 10-digit mobile number" required>
+            <div class="password-input-wrapper">
+              <input type="password" id="loginPassword" class="form-control" placeholder="Enter your 10-digit mobile number" required>
+              <button type="button" class="btn-toggle-password" data-target="loginPassword" aria-label="Toggle password visibility" title="Show Password">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
           </div>
           
           <div style="margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; background: rgba(99, 102, 241, 0.08); padding: 0.65rem 0.9rem; border-radius: 10px; border: 1px solid rgba(99, 102, 241, 0.15);">

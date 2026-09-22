@@ -993,10 +993,18 @@ app.post('/api/admin/settings/library-location', authenticateToken, requireAdmin
 
 
 // Start Server and database verification
-db.initDatabase().then(() => {
-  server.listen(PORT, () => {
-    console.log(`Server is running in ${db.dbType} mode on port ${PORT}`);
+if (!process.env.VERCEL) {
+  db.initDatabase().then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server is running in ${db.dbType} mode on port ${PORT}`);
+    });
+  }).catch(err => {
+    console.error('Fatal: Failed to initialize database.', err);
   });
-}).catch(err => {
-  console.error('Fatal: Failed to initialize database database.', err);
-});
+} else {
+  db.initDatabase().catch(err => {
+    console.error('Database initialization warning on Vercel:', err);
+  });
+}
+
+module.exports = app;

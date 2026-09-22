@@ -1970,3 +1970,41 @@ function showCustomLoginPopup(isSuccess, message, callback) {
     if (callback) callback();
   }, 3000);
 }
+
+// ==========================================
+// PASSWORD VISIBILITY TOGGLE LOGIC
+// ==========================================
+function initPasswordToggles() {
+  document.querySelectorAll('.btn-toggle-password').forEach(btn => {
+    if (btn.dataset.initialized) return;
+    btn.dataset.initialized = 'true';
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = btn.getAttribute('data-target');
+      const input = targetId ? document.getElementById(targetId) : btn.parentElement.querySelector('input');
+      if (!input) return;
+
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+          icon.classList.remove('fa-eye');
+          icon.classList.add('fa-eye-slash');
+        }
+        btn.setAttribute('title', 'Hide Password');
+      } else {
+        input.type = 'password';
+        if (icon) {
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
+        }
+        btn.setAttribute('title', 'Show Password');
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initPasswordToggles);
+initPasswordToggles();
+
