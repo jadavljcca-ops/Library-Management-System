@@ -215,7 +215,8 @@ header {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 /* Live Clock */
@@ -237,7 +238,65 @@ header {
   animation: pulse 2s infinite;
 }
 
-/* User Info Indicator */
+/* Sidebar / Hamburger Menu Admin User Card */
+.sidebar-user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1.5rem;
+  background: var(--sidebar-active);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-user-card:hover {
+  background: var(--card-bg);
+  transform: translateY(-1px);
+}
+
+.sidebar-user-card .user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--info);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.35);
+}
+
+.sidebar-user-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-user-details #adminProfileName {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-details .user-role-tag {
+  font-size: 0.72rem;
+  color: var(--primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Generic User Info Indicator & Avatar */
 .user-profile-badge {
   display: flex;
   align-items: center;
@@ -875,11 +934,14 @@ tr:hover td {
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
   .student-dashboard-layout {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 }
 
@@ -1293,10 +1355,36 @@ tr:hover td {
     overflow-x: hidden;
   }
   
-  .header-left h1 {
-    font-size: 1.2rem;
+  /* Mobile Header */
+  header {
+    height: 62px !important;
+    padding: 0 1rem !important;
   }
-  
+
+  .header-left h1 {
+    font-size: 1.15rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 175px;
+  }
+
+  .header-right {
+    gap: 0.5rem !important;
+  }
+
+  .live-clock-card {
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.8rem !important;
+    gap: 0.35rem !important;
+  }
+
+  .theme-toggle-btn {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 0.95rem !important;
+  }
+
   /* Mobile Layout - Strict Zero Horizontal Scroll & Lock to Vertical Up-Down Only */
   html, body, .app-container, .main-wrapper, .content-body {
     overflow-x: hidden !important;
@@ -1334,8 +1422,76 @@ tr:hover td {
     transform: translateY(-4px); /* Only strictly up-down */
   }
 
+  .chart-wrapper {
+    height: 250px !important;
+  }
+
+  /* Student Portal Mobile Layout */
+  .student-dashboard-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+    padding: 0 !important;
+  }
+
+  .scanner-card,
+  .student-card {
+    padding: 1.25rem 1rem !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .scanner-viewfinder {
+    max-width: min(280px, 80vw) !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .scan-target {
+    width: 150px !important;
+    height: 150px !important;
+  }
+
+  #studentMapContainer {
+    height: 200px !important;
+  }
+
+  /* Scanner action buttons: stack vertically on mobile */
+  .scanner-card > div[style*="flex"][style*="gap"] {
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+  }
+
+  .scanner-card .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Student profile card: compact on mobile */
+  .student-avatar-large {
+    width: 80px !important;
+    height: 80px !important;
+    font-size: 2rem !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .student-card h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .student-info-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+    margin-top: 1.25rem !important;
+  }
+
+  .student-info-item {
+    padding: 0.65rem 0.75rem !important;
+  }
+
   .content-body {
-    padding: 1rem !important;
+    padding: 0.85rem !important;
     width: 100% !important;
     max-width: 100vw !important;
     overflow-x: hidden !important;
@@ -1361,15 +1517,154 @@ tr:hover td {
     justify-content: center;
     width: 100%;
     flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
   }
-  
+
+  /* Filters, Search & Tables */
+  .filter-bar {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 10px !important;
+  }
+
+  .table-wrapper table {
+    min-width: 600px !important;
+  }
+
+  .table-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* Extra Small Mobile Devices (<= 480px) */
+@media (max-width: 480px) {
+  .header-left h1 {
+    font-size: 1rem !important;
+    max-width: 130px !important;
+  }
+
+  .live-clock-card span {
+    display: none; /* Icon-only clock to save header space */
+  }
+
+  .live-clock-card {
+    padding: 0.45rem !important;
+    border-radius: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    justify-content: center !important;
+  }
+
+  #headerUserName {
+    display: none; /* Show avatar circle only */
+  }
+
+  /* Student portal: tighten further on very small phones */
+  .scanner-viewfinder {
+    max-width: min(240px, 75vw) !important;
+  }
+
+  .scan-target {
+    width: 130px !important;
+    height: 130px !important;
+  }
+
   .student-info-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .student-info-item span:last-child {
+    font-size: 0.82rem !important;
+  }
+
+  .student-avatar-large {
+    width: 70px !important;
+    height: 70px !important;
+    font-size: 1.75rem !important;
+  }
+
+  .scanner-card h3,
+  .student-card h2 {
+    font-size: 1rem !important;
+  }
+
+  .auth-panel-form {
+    padding: 1rem !important;
+  }
+
+  .auth-form-card {
+    padding: 1.25rem 1rem !important;
+    border-radius: 14px !important;
+  }
+
+  .auth-top-nav .btn {
+    font-size: 0.78rem !important;
+    padding: 0 0.6rem !important;
+    height: 34px !important;
+  }
+
+  .stat-card {
+    padding: 1rem 1.1rem !important;
+  }
+
+  .stat-value {
+    font-size: 1.6rem !important;
+  }
+
+  .stat-icon {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 1.2rem !important;
+  }
+
+  .modal-card {
+    width: 95% !important;
+    padding: 1.15rem !important;
+  }
+}
+
+/* Scanner & Location Button Groups */
+.location-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.scanner-btn-group {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .scanner-btn-group {
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .scanner-btn-group .btn,
+  .location-btn-group .btn {
+    width: 100% !important;
+    justify-content: center;
   }
 }
 
@@ -1472,13 +1767,16 @@ tr:hover td {
 }
 
 .modal-card {
-  width: 90%;
+  width: 92%;
   max-width: 500px;
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   box-shadow: var(--card-shadow);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.75rem;
   transform: translateY(20px) scale(0.95);
   transition: transform 0.3s ease;
 }
