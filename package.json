@@ -5,7 +5,8 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "node --watch backend/server.js"
+    "dev": "node --watch backend/server.js",
+    "build": "echo 'No build step required for vanilla JS project'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,5 +18,8 @@
     "pg": "^8.23.0",
     "socket.io": "^4.7.4",
     "sqlite3": "^5.1.7"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }

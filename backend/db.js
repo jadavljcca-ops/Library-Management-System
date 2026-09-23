@@ -5,11 +5,18 @@ const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Load .env for local dev. On Vercel, env vars come from the dashboard — no file needed.
+try { dotenv.config({ path: path.join(__dirname, '.env') }); } catch (e) { /* no .env file — ok on Vercel */ }
 
 const rawType = process.env.DB_TYPE ? process.env.DB_TYPE.toLowerCase() : '';
-const dbType = rawType || (process.env.DATABASE_URL ? 'postgres' : 'sqlite');
+const neonConnStr = process.env.DATABASE_URL || 
+                    process.env.POSTGRES_URL || 
+                    process.env.POSTGRES_PRISMA_URL || 
+                    process.env.POSTGRES_URL_NON_POOLING;
+
+const dbType = rawType || (neonConnStr ? 'postgres' : 'sqlite');
 let dbInstance = null;
+let isInitialized = false;
 
 // Initialize connection
 if (dbType === 'postgres' || dbType === 'neon') {
@@ -17,17 +24,20 @@ if (dbType === 'postgres' || dbType === 'neon') {
   // Parse int8 (BIGINT count) as standard integer
   types.setTypeParser(20, (val) => parseInt(val, 10));
 
-  const connectionString = process.env.DATABASE_URL || 
+  const connectionString = neonConnStr || 
     `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASS || ''}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'library_system'}`;
 
   const isCloudOrSsl = connectionString.includes('neon.tech') || 
                        connectionString.includes('sslmode=require') || 
-                       process.env.DB_SSL === 'true';
+                       connectionString.includes('verceldb') ||
+                       process.env.DB_SSL === 'true' ||
+                       process.env.NODE_ENV === 'production' ||
+                       !!process.env.VERCEL;
 
   dbInstance = new Pool({
     connectionString,
     ssl: isCloudOrSsl ? { rejectUnauthorized: false } : undefined,
-    max: 10,
+    max: process.env.VERCEL ? 3 : 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000
   });
@@ -145,6 +155,7 @@ function query(sql, params = []) {
 
 // Database schema initialization
 async function initDatabase() {
+  if (isInitialized) return;
   try {
     if (dbType === 'postgres' || dbType === 'neon') {
       // PostgreSQL / Neon tables
@@ -364,6 +375,7 @@ async function initDatabase() {
 
     console.log('Database tables verified/created successfully.');
     await seedAdmin();
+    isInitialized = true;
   } catch (error) {
     console.error('Error during database schema initialization:', error);
   }

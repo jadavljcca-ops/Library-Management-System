@@ -12,7 +12,8 @@ const path = require('path');
 const db = require('./db');
 const https = require('https');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Load .env for local dev. On Vercel, env vars come from the dashboard — no file needed.
+try { dotenv.config({ path: path.join(__dirname, '.env') }); } catch (e) { /* no .env file — ok on Vercel */ }
 
 const app = express();
 const server = http.createServer(app);
@@ -175,6 +176,25 @@ function requireAdmin(req, res, next) {
     res.status(403).json({ success: false, message: 'Access Denied: Admins only.' });
   }
 }
+
+// ==========================================
+// HEALTH CHECK APIS (Vercel & Monitoring)
+// ==========================================
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Smart Library QR System API is running',
+    environment: process.env.VERCEL ? 'vercel-serverless' : 'node-server'
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    database: db.dbType,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ==========================================
 // AUTHENTICATION APIS
