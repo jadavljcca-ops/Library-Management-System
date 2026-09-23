@@ -102,34 +102,31 @@
         <a href="index.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;">
           <i class="fa-solid fa-house"></i> Home
         </a>
-        <a href="student.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;">
-          <i class="fa-solid fa-circle-user"></i> Student Portal
-        </a>
       </div>
 
       <div class="auth-form-card">
         <div class="auth-form-header">
-          <h3>Admin Control Center</h3>
-          <p>Sign in to access dashboard data</p>
+          <h3>Welcome to Library System</h3>
+          <p>Login with your Admin or Student credentials</p>
         </div>
         
         <form id="adminLoginForm">
           <div class="form-group">
-            <label for="adminUsername">Username or Email</label>
-            <input type="text" id="adminUsername" class="form-control" placeholder="e.g. admin@lj.edu" required>
+            <label for="adminUsername">Username / Email / Enrollment No.</label>
+            <input type="text" id="adminUsername" class="form-control" placeholder="Enter Username, Email, or Enrollment No." required>
           </div>
           <div class="form-group">
             <label for="adminPassword">Password</label>
             <div class="password-input-wrapper">
-              <input type="password" id="adminPassword" class="form-control" placeholder="••••••••" required>
+              <input type="password" id="adminPassword" class="form-control" placeholder="Enter your password" required>
               <button type="button" class="btn-toggle-password" data-target="adminPassword" aria-label="Toggle password visibility" title="Show Password">
-                <i class="fa-regular fa-eye"></i>
+                <i class="fa-solid fa-eye"></i>
               </button>
             </div>
           </div>
           
           <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-            <i class="fa-solid fa-lock-open"></i> Authenticate
+            <i class="fa-solid fa-right-to-bracket"></i> Login
           </button>
         </form>
       </div>
@@ -153,6 +150,15 @@
         <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation menu" title="Close">
           <i class="fa-solid fa-xmark"></i>
         </button>
+      </div>
+
+      <!-- Admin Profile in Hamburger / Sidebar Menu -->
+      <div class="sidebar-user-card" id="sidebarAdminBadge" title="Admin Settings">
+        <div class="user-avatar" id="adminAvatar" style="background: var(--info);">A</div>
+        <div class="sidebar-user-details">
+          <span id="adminProfileName" style="font-weight: 600;">Library Admin</span>
+          <span class="user-role-tag">Administrator</span>
+        </div>
       </div>
 
       <ul class="sidebar-menu">
@@ -198,17 +204,6 @@
           <div class="live-clock-card">
             <i class="fa-regular fa-clock"></i>
             <span id="adminLiveClock">00:00:00 AM</span>
-          </div>
-
-          <!-- Light/Dark Mode Switcher -->
-          <button class="theme-toggle-btn" id="adminThemeToggle" title="Toggle Theme">
-            <i class="fa-solid fa-moon"></i>
-          </button>
-
-          <!-- Admin User Badge -->
-          <div class="user-profile-badge">
-            <div class="user-avatar" style="background: var(--info);">A</div>
-            <span id="adminProfileName" style="font-weight: 600;">Library Admin</span>
           </div>
         </div>
       </header>
@@ -262,68 +257,36 @@
             </div>
           </div>
 
-          <!-- Charts Row -->
-          <div class="charts-grid">
-            
-            <!-- Hourly Traffic Chart -->
-            <div class="chart-card">
-              <div class="chart-header">
-                <span class="chart-title">Hourly Attendance Load Today</span>
-                <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
-              </div>
-              <div class="chart-wrapper">
-                <canvas id="hourlyTrendChart"></canvas>
-              </div>
+          <!-- Hourly Traffic Chart -->
+          <div class="chart-card" style="margin-bottom: 2rem; width: 100%;">
+            <div class="chart-header">
+              <span class="chart-title">Hourly Attendance Load Today</span>
+              <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
             </div>
-
-            <!-- Real-time Alerts Log Card -->
-            <div class="live-alerts-panel">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <span style="font-weight: 700; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted);">Real-time Activity</span>
-                <span class="badge badge-success" style="font-size:0.65rem;">
-                  <span class="badge-dot" style="animation: pulse 1s infinite;"></span> Live Connected
-                </span>
-              </div>
-              <ul class="alerts-list" id="realTimeAlertsList">
-                <li style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 0;">
-                  No live scans recorded yet.
-                </li>
-              </ul>
+            <div class="chart-wrapper">
+              <canvas id="hourlyTrendChart"></canvas>
             </div>
           </div>
 
-          <div class="charts-grid-equal">
-            <!-- Department pie chart -->
-            <div class="chart-card">
-              <div class="chart-header">
-                <span class="chart-title">Traffic by Department Today</span>
-                <i class="fa-solid fa-chart-pie" style="color: var(--info);"></i>
-              </div>
-              <div class="chart-wrapper" style="height: 280px;">
-                <canvas id="departmentChart"></canvas>
-              </div>
+          <!-- QR Code Display / Generator Card -->
+          <div class="chart-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1.5rem; text-align: center; margin-bottom: 2rem; width: 100%;">
+            <h3 style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-qrcode" style="color: var(--primary); margin-right: 0.25rem;"></i> Library Entry/Exit QR Code</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; max-width: 420px;">
+              Display this QR Code at the library entrance. Students scan it using their camera to enter or exit.
+            </p>
+            <div style="background: #ffffff; padding: 1rem; border-radius: 12px; border: 1px solid var(--card-border); display: inline-flex; justify-content: center; align-items: center; margin-bottom: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+              <canvas id="adminQRCanvas" width="160" height="160"></canvas>
             </div>
-
-            <!-- QR Code Display / Generator Card -->
-            <div class="chart-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; text-align: center;">
-              <h3 style="font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-qrcode" style="color: var(--primary); margin-right: 0.25rem;"></i> Library Entry/Exit QR Code</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; max-width: 320px;">
-                Display this QR Code at the library entrance. Students scan it using their camera to enter or exit.
-              </p>
-              <div style="background: #ffffff; padding: 1rem; border-radius: 12px; border: 1px solid var(--card-border); display: inline-flex; justify-content: center; align-items: center; margin-bottom: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                <canvas id="adminQRCanvas" width="160" height="160"></canvas>
-              </div>
-              <div style="background: var(--bg-color); border: 1px solid var(--card-border); padding: 0.4rem 0.85rem; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
-                QR Value: <code id="activeQRConfig" style="color: var(--primary); margin-left: 0.25rem;">SMART_LIBRARY_QR_2026</code>
-              </div>
-              <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                <button class="btn btn-secondary" id="downloadQRBtn" style="height: 36px; font-size: 0.8rem; padding: 0 0.85rem;">
-                  <i class="fa-solid fa-download"></i> Download
-                </button>
-                <button class="btn btn-secondary" id="printQRBtn" style="height: 36px; font-size: 0.8rem; padding: 0 0.85rem;">
-                  <i class="fa-solid fa-print"></i> Print
-                </button>
-              </div>
+            <div style="background: var(--bg-color); border: 1px solid var(--card-border); padding: 0.4rem 0.85rem; border-radius: 30px; font-size: 0.8rem; font-weight: 600;">
+              QR Value: <code id="activeQRConfig" style="color: var(--primary); margin-left: 0.25rem;">SMART_LIBRARY_QR_2026</code>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+              <button class="btn btn-secondary" id="downloadQRBtn" style="height: 38px; font-size: 0.85rem; padding: 0 1rem;">
+                <i class="fa-solid fa-download"></i> Download
+              </button>
+              <button class="btn btn-secondary" id="printQRBtn" style="height: 38px; font-size: 0.85rem; padding: 0 1rem;">
+                <i class="fa-solid fa-print"></i> Print
+              </button>
             </div>
           </div>
 
@@ -672,7 +635,7 @@
           <div class="password-input-wrapper">
             <input type="password" id="adminOldPassword" class="form-control" placeholder="••••••••" required>
             <button type="button" class="btn-toggle-password" data-target="adminOldPassword" aria-label="Toggle password visibility" title="Show Password">
-              <i class="fa-regular fa-eye"></i>
+              <i class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>
@@ -682,7 +645,7 @@
           <div class="password-input-wrapper">
             <input type="password" id="adminNewPassword" class="form-control" placeholder="••••••••" required>
             <button type="button" class="btn-toggle-password" data-target="adminNewPassword" aria-label="Toggle password visibility" title="Show Password">
-              <i class="fa-regular fa-eye"></i>
+              <i class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>
@@ -692,7 +655,7 @@
           <div class="password-input-wrapper">
             <input type="password" id="adminConfirmPassword" class="form-control" placeholder="••••••••" required>
             <button type="button" class="btn-toggle-password" data-target="adminConfirmPassword" aria-label="Toggle password visibility" title="Show Password">
-              <i class="fa-regular fa-eye"></i>
+              <i class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>

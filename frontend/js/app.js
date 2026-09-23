@@ -72,33 +72,13 @@ const stopScanBtn = document.getElementById('stopScanBtn');
 const globalLoader = document.getElementById('globalLoader');
 
 // ==========================================
-// THEME MANAGEMENT
+// FORCE LIGHT MODE (Theme switching disabled)
 // ==========================================
 function initTheme() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  updateThemeIcons(savedTheme);
+  // Always use light mode - theme switching is disabled
+  localStorage.removeItem('theme');
+  document.documentElement.setAttribute('data-theme', 'light');
 }
-
-function toggleTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('theme', newTheme);
-  updateThemeIcons(newTheme);
-  showToast(`Switched to ${newTheme} mode.`, 'info');
-}
-
-function updateThemeIcons(theme) {
-  const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-  const iconHtml = `<i class="fa-solid ${icon}"></i>`;
-  if (themeToggleAuth) themeToggleAuth.innerHTML = iconHtml;
-  if (themeToggleDash) themeToggleDash.innerHTML = iconHtml;
-}
-
-[themeToggleAuth, themeToggleDash].forEach(btn => {
-  if (btn) btn.addEventListener('click', toggleTheme);
-});
 
 // ==========================================
 // TOAST NOTIFICATIONS
@@ -930,15 +910,13 @@ function initPasswordToggles() {
       if (input.type === 'password') {
         input.type = 'text';
         if (icon) {
-          icon.classList.remove('fa-eye');
-          icon.classList.add('fa-eye-slash');
+          icon.className = 'fa-solid fa-eye-slash';
         }
         btn.setAttribute('title', 'Hide Password');
       } else {
         input.type = 'password';
         if (icon) {
-          icon.classList.remove('fa-eye-slash');
-          icon.classList.add('fa-eye');
+          icon.className = 'fa-solid fa-eye';
         }
         btn.setAttribute('title', 'Show Password');
       }

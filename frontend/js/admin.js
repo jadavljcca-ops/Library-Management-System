@@ -140,29 +140,13 @@ const exportPdfBtn = document.getElementById('exportPdfBtn');
 const adminLoader = document.getElementById('adminLoader');
 
 // ==========================================
-// THEME MANAGEMENT
+// FORCE LIGHT MODE (Theme switching disabled)
 // ==========================================
 function initTheme() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  updateThemeIcons(savedTheme);
+  // Always use light mode - theme switching is disabled
+  localStorage.removeItem('theme');
+  document.documentElement.setAttribute('data-theme', 'light');
 }
-
-function toggleTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('theme', newTheme);
-  updateThemeIcons(newTheme);
-  showToast(`Switched to ${newTheme} mode.`, 'info');
-}
-
-function updateThemeIcons(theme) {
-  const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-  adminThemeToggle.innerHTML = `<i class="fa-solid ${icon}"></i>`;
-}
-
-if (adminThemeToggle) adminThemeToggle.addEventListener('click', toggleTheme);
 
 // ==========================================
 // TOAST NOTIFICATIONS
@@ -320,7 +304,9 @@ function updateHourlyChart(trendData) {
 
 // Draw/Update Department pie distribution
 function updateDepartmentChart(deptData) {
-  const ctx = document.getElementById('departmentChart').getContext('2d');
+  const canvas = document.getElementById('departmentChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
   
   const labels = deptData.map(item => item.department || 'Unknown');
   const counts = deptData.map(item => item.count);
@@ -522,6 +508,7 @@ function initSocket() {
 }
 
 function addLiveAlert(record, type) {
+  if (!realTimeAlertsList) return;
   // Clear "no records" text first
   if (realTimeAlertsList.children.length === 1 && realTimeAlertsList.children[0].textContent.includes('No live scans')) {
     realTimeAlertsList.innerHTML = '';
@@ -1047,6 +1034,14 @@ if (mobileSidebarClose) {
   mobileSidebarClose.addEventListener('click', () => toggleMobileSidebar(false));
 }
 
+const sidebarAdminBadge = document.getElementById('sidebarAdminBadge');
+if (sidebarAdminBadge) {
+  sidebarAdminBadge.addEventListener('click', () => {
+    toggleMobileSidebar(false);
+    if (adminSettingsBtn) adminSettingsBtn.click();
+  });
+}
+
 // ==========================================
 // ADMIN DASHBOARD SWITCH NAVIGATION
 // ==========================================
@@ -1217,6 +1212,10 @@ async function loadAdminProfile() {
       if (adminProfileName) {
         adminProfileName.textContent = data.admin.name || 'Library Admin';
       }
+      const adminAvatar = document.getElementById('adminAvatar');
+      if (adminAvatar && data.admin.name) {
+        adminAvatar.textContent = data.admin.name.trim().charAt(0).toUpperCase();
+      }
     }
   } catch (err) {
     console.error('Error fetching admin profile:', err);
@@ -1246,6 +1245,10 @@ if (adminProfileForm) {
       if (res.ok && data.success) {
         if (adminProfileName) {
           adminProfileName.textContent = data.admin.name;
+        }
+        const adminAvatar = document.getElementById('adminAvatar');
+        if (adminAvatar && data.admin.name) {
+          adminAvatar.textContent = data.admin.name.trim().charAt(0).toUpperCase();
         }
         if (typeof Swal !== 'undefined') {
           Swal.fire({
@@ -1989,15 +1992,13 @@ function initPasswordToggles() {
       if (input.type === 'password') {
         input.type = 'text';
         if (icon) {
-          icon.classList.remove('fa-eye');
-          icon.classList.add('fa-eye-slash');
+          icon.className = 'fa-solid fa-eye-slash';
         }
         btn.setAttribute('title', 'Hide Password');
       } else {
         input.type = 'password';
         if (icon) {
-          icon.classList.remove('fa-eye-slash');
-          icon.classList.add('fa-eye');
+          icon.className = 'fa-solid fa-eye';
         }
         btn.setAttribute('title', 'Show Password');
       }

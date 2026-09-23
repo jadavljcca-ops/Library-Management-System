@@ -11,32 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// THEME MANAGEMENT (Synchronized with App)
+// FORCE LIGHT MODE (Theme switching disabled)
 // ==========================================
 function initTheme() {
-  const themeToggle = document.getElementById('themeToggle');
-  if (!themeToggle) return;
-
-  // Read saved theme or system preference
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  updateThemeIcon(savedTheme);
-
-  themeToggle.addEventListener('click', () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeIcon(newTheme);
-  });
-}
-
-function updateThemeIcon(theme) {
-  const themeToggle = document.getElementById('themeToggle');
-  if (!themeToggle) return;
-  const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
-  themeToggle.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+  // Always use light mode - theme switching is disabled
+  localStorage.removeItem('theme');
+  document.documentElement.setAttribute('data-theme', 'light');
 }
 
 // ==========================================
