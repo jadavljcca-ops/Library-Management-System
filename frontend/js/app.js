@@ -181,6 +181,12 @@ function renderProfile(user) {
   profileMobile.textContent = user.mobile;
   profileDepartment.textContent = user.department;
   profileCourseSem.textContent = `${user.course} - ${user.semester} Sem`;
+
+  // Sync mobile FAB panel
+  const mAvatar = document.getElementById('avatarLetterMobile');
+  const mName   = document.getElementById('headerUserNameMobile');
+  if (mAvatar) mAvatar.textContent = letter;
+  if (mName)   mName.textContent   = user.name;
 }
 
 // Check status inside/outside library
@@ -927,3 +933,54 @@ function initPasswordToggles() {
 document.addEventListener('DOMContentLoaded', initPasswordToggles);
 initPasswordToggles();
 
+// ==========================================
+// STUDENT MOBILE FAB PANEL
+// ==========================================
+function setupStudentMobileFAB() {
+  const fab      = document.getElementById('studentMobileFab');
+  const panel    = document.getElementById('studentFabPanel');
+  const backdrop = document.getElementById('studentFabBackdrop');
+  const logoutMobile = document.getElementById('logoutBtnMobile');
+
+  if (!fab || !panel || !backdrop) return;
+
+  function openPanel() {
+    fab.classList.add('open');
+    panel.classList.add('open');
+    backdrop.classList.add('open');
+  }
+
+  function closePanel() {
+    fab.classList.remove('open');
+    panel.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  fab.addEventListener('click', () => {
+    fab.classList.contains('open') ? closePanel() : openPanel();
+  });
+
+  backdrop.addEventListener('click', closePanel);
+
+  // Mobile logout mirrors main logout
+  if (logoutMobile) {
+    logoutMobile.addEventListener('click', () => {
+      closePanel();
+      logout();
+    });
+  }
+
+  // Sync clock every second to mobile FAB panel span
+  const mClock = document.getElementById('liveClockMobile');
+  if (mClock) {
+    setInterval(() => {
+      const now = new Date();
+      let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      mClock.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ampm}`;
+    }, 1000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', setupStudentMobileFAB);

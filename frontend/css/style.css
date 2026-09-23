@@ -1964,3 +1964,138 @@ tr:hover td {
 .swal2-timer-progress-bar {
   background: var(--primary, #6366f1) !important;
 }
+
+/* ========================================================== */
+/* STUDENT PORTAL — MOBILE FAB (Floating Action Button)       */
+/* ========================================================== */
+
+/* FAB hidden on desktop */
+.student-mobile-fab {
+  display: none;
+}
+.student-fab-backdrop,
+.student-fab-panel {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Hide desktop header-right on mobile */
+  #headerRightDesktop {
+    display: none !important;
+  }
+
+  /* FAB button — fixed bottom-right, 15px from edges */
+  .student-mobile-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+    right: calc(15px + env(safe-area-inset-right, 0px));
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #6366f1);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 18px rgba(79, 70, 229, 0.45), 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 1200;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .student-mobile-fab:active {
+    transform: scale(0.92);
+  }
+
+  .student-mobile-fab i {
+    font-size: 1.3rem;
+    transition: transform 0.25s ease;
+  }
+
+  .student-mobile-fab.open {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.5);
+  }
+
+  .student-mobile-fab.open i {
+    transform: rotate(90deg);
+  }
+
+  /* Backdrop */
+  .student-fab-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 1150;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+
+  .student-fab-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Slide-up Panel */
+  .student-fab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    right: calc(15px + env(safe-area-inset-right, 0px));
+    width: min(260px, calc(100vw - 30px));
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    padding: 1.25rem 1.1rem 1rem;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 4px 12px rgba(79,70,229,0.12);
+    z-index: 1155;
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  }
+
+  .student-fab-panel.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .fab-panel-header {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--card-border);
+    margin-bottom: 0.25rem;
+  }
+
+  .fab-panel-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.5rem;
+    border-radius: 10px;
+    background: var(--bg-color);
+    border: 1px solid var(--card-border);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .fab-panel-row i {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+}

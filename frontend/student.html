@@ -110,7 +110,7 @@
         <div class="header-left">
           <h1>Smart Library Scanner</h1>
         </div>
-        <div class="header-right">
+        <div class="header-right" id="headerRightDesktop">
           <!-- Live Clock -->
           <div class="live-clock-card">
             <i class="fa-regular fa-clock"></i>
@@ -128,6 +128,37 @@
           </button>
         </div>
       </header>
+
+      <!-- ========================================= -->
+      <!-- MOBILE FAB + SLIDE-UP PANEL              -->
+      <!-- ========================================= -->
+      <!-- FAB Button (only visible on mobile) -->
+      <button class="student-mobile-fab" id="studentMobileFab" aria-label="Menu">
+        <i class="fa-solid fa-bars" id="studentFabIcon"></i>
+      </button>
+
+      <!-- Slide-up Panel (backdrop + panel) -->
+      <div class="student-fab-backdrop" id="studentFabBackdrop"></div>
+      <div class="student-fab-panel" id="studentFabPanel">
+        <div class="fab-panel-header">Quick Actions</div>
+
+        <!-- Clock row -->
+        <div class="fab-panel-row">
+          <i class="fa-regular fa-clock" style="color: var(--primary);"></i>
+          <span id="liveClockMobile">00:00:00 AM</span>
+        </div>
+
+        <!-- Profile row -->
+        <div class="fab-panel-row">
+          <div class="user-avatar" id="avatarLetterMobile" style="width:32px;height:32px;font-size:0.85rem;">S</div>
+          <span id="headerUserNameMobile" style="font-weight:600;">Student</span>
+        </div>
+
+        <!-- Logout button -->
+        <button class="btn btn-secondary" id="logoutBtnMobile" style="width:100%; margin-top:0.5rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
 
       <div class="content-body">
         <div class="student-dashboard-layout">
