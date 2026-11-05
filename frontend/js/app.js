@@ -237,12 +237,55 @@ async function checkActiveSession() {
   }
 }
 
+// Helpers for Date and Time formatting
+function formatTimeDisplay(timeStr) {
+  if (!timeStr || timeStr === '-' || timeStr === 'null' || timeStr === 'undefined') return '-';
+  if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+    return timeStr;
+  }
+  const parts = String(timeStr).split(':');
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    const seconds = parts[2] ? parts[2].substring(0, 2) : '';
+    if (isNaN(hours)) return timeStr;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    const h12Str = String(h12).padStart(2, '0');
+    return seconds ? `${h12Str}:${minutes}:${seconds} ${ampm}` : `${h12Str}:${minutes} ${ampm}`;
+  }
+  return timeStr;
+}
+
 // ==========================================
 // ATTENDANCE SCAN LOGIC
 // ==========================================
 async function submitQRScan(qrContent) {
   showLoader(true);
   try {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    let clientDate;
+    let clientTime;
+    try {
+      clientDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(now);
+      clientTime = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(now);
+    } catch (e) {
+      clientDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      clientTime = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
     const res = await fetch(`${API_URL}/api/attendance/scan`, {
       method: 'POST',
       headers: {
@@ -252,7 +295,9 @@ async function submitQRScan(qrContent) {
       body: JSON.stringify({
         qrCode: qrContent,
         latitude: currentStudentLocation.latitude,
-        longitude: currentStudentLocation.longitude
+        longitude: currentStudentLocation.longitude,
+        clientDate: clientDate,
+        clientTime: clientTime
       })
     });
     const data = await res.json();
@@ -281,7 +326,7 @@ async function submitQRScan(qrContent) {
               <div style="font-size: 0.92rem; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
                 <div><strong>Enrollment No:</strong> <code style="font-size: 0.9rem; font-weight: 600;">${record.enrollment_no || (currentStudent && currentStudent.enrollment_no) || 'N/A'}</code></div>
                 ${(record.department || (currentStudent && currentStudent.department)) ? `<div><strong>Department:</strong> ${record.department || currentStudent.department} ${record.course || (currentStudent && currentStudent.course) ? `(${record.course || currentStudent.course})` : ''}</div>` : ''}
-                <div><strong>Time:</strong> ${isEntry ? (record.entry_time || '-') : (record.exit_time || '-')}</div>
+                <div><strong>Time:</strong> ${isEntry ? formatTimeDisplay(record.entry_time) : formatTimeDisplay(record.exit_time)}</div>
                 ${!isEntry && record.duration ? `<div><strong>Duration:</strong> <span style="font-weight: 700; color: #f59e0b;">${record.duration}</span></div>` : ''}
               </div>
             </div>

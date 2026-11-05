@@ -413,6 +413,53 @@ async function fetchAttendanceRecords(filters = {}) {
   }
 }
 
+// Date and Time Formatting Helpers (DD/MM/YYYY and Real Time Display)
+function formatDateDDMMYYYY(dateStr) {
+  if (!dateStr || dateStr === '-' || dateStr === 'null' || dateStr === 'undefined') return '-';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const parts = String(dateStr).split('T')[0].split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    const [year, month, day] = parts;
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  }
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+}
+
+function formatTimeDisplay(timeStr) {
+  if (!timeStr || timeStr === '-' || timeStr === 'null' || timeStr === 'undefined') return '-';
+  if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+    return timeStr;
+  }
+  const parts = String(timeStr).split(':');
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    const seconds = parts[2] ? parts[2].substring(0, 2) : '';
+    if (isNaN(hours)) return timeStr;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    const h12Str = String(h12).padStart(2, '0');
+    return seconds ? `${h12Str}:${minutes}:${seconds} ${ampm}` : `${h12Str}:${minutes} ${ampm}`;
+  }
+  return timeStr;
+}
+
+function formatDistanceDisplay(meters) {
+  if (meters === null || meters === undefined || meters === '') return '-';
+  const num = parseFloat(meters);
+  if (isNaN(num)) return '-';
+  if (num <= 10) return '0 m (Inside)';
+  if (num < 1000) return `${Math.round(num)} m`;
+  return `${(num / 1000).toFixed(2)} km`;
+}
+
 // Render paginated records
 function renderTable() {
   attendanceTableBody.innerHTML = '';
@@ -444,21 +491,26 @@ function renderTable() {
     const statusText = isInside ? 'Inside' : 'Exited';
 
     tr.innerHTML = `
-      <td><strong>${row.entry_date}</strong></td>
+      <td><strong>${formatDateDDMMYYYY(row.entry_date)}</strong></td>
       <td>${row.name}</td>
       <td><code>${row.enrollment_no}</code></td>
       <td>${row.department}</td>
       <td>${row.course} <span style="color: var(--text-muted); font-size: 0.8rem;">(${row.semester})</span></td>
-      <td>${row.entry_time}</td>
+      <td>${formatTimeDisplay(row.entry_time)}</td>
       <td><span title="${row.entry_latitude || ''}, ${row.entry_longitude || ''}">${row.entry_location_name || '-'}</span></td>
-      <td>${row.distance_meters !== null && row.distance_meters !== undefined ? Math.round(row.distance_meters) + ' m' : '-'}</td>
-      <td>${row.exit_date || '-'}</td>
-      <td>${row.exit_time || '-'}</td>
+      <td><strong>${formatDistanceDisplay(row.distance_meters)}</strong></td>
+      <td>${formatDateDDMMYYYY(row.exit_date)}</td>
+      <td>${formatTimeDisplay(row.exit_time)}</td>
       <td>${row.duration || '-'}</td>
       <td>
         <span class="badge ${statusClass}">
           <span class="badge-dot"></span> ${statusText}
         </span>
+      </td>
+      <td style="text-align: center;">
+        <button class="btn btn-sm btn-danger btn-delete-attendance" data-id="${row.id}" style="padding: 4px 10px; font-size: 0.8rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Delete Attendance Log">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
       </td>
     `;
     attendanceTableBody.appendChild(tr);
@@ -469,6 +521,32 @@ function renderTable() {
   // Control buttons disabled status
   btnPrevPage.disabled = currentPage === 1;
   btnNextPage.disabled = endIndex >= allRecords.length;
+
+  // Add click handlers for delete attendance buttons
+  document.querySelectorAll('.btn-delete-attendance').forEach(button => {
+    button.addEventListener('click', async () => {
+      const id = button.getAttribute('data-id');
+      const row = button.closest('tr');
+      const studentName = row ? row.querySelectorAll('td')[1]?.textContent || 'this student' : 'this record';
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Delete Attendance Record?',
+          text: `Are you sure you want to delete the attendance log for ${studentName}?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: 'Yes, delete it!'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            await deleteAttendanceRecord(id);
+          }
+        });
+      } else if (confirm(`Delete attendance record for ${studentName}?`)) {
+        await deleteAttendanceRecord(id);
+      }
+    });
+  });
 }
 
 // Pagination Event Listeners
@@ -485,6 +563,81 @@ btnNextPage.addEventListener('click', () => {
     renderTable();
   }
 });
+
+// Delete Single Attendance Record
+async function deleteAttendanceRecord(id) {
+  if (!token) return;
+  showLoader(true);
+  try {
+    const res = await fetch(`${API_URL}/api/admin/attendance/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(data.message || 'Attendance log deleted successfully.', 'success');
+      await fetchAttendanceRecords(getFilterValues());
+      await fetchDashboardStats();
+    } else {
+      showToast(data.message || 'Failed to delete record.', 'error');
+    }
+  } catch (error) {
+    console.error('Delete attendance error:', error);
+    showToast('Failed to delete attendance record.', 'error');
+  } finally {
+    showLoader(false);
+  }
+}
+
+// Clear All Attendance Records
+async function clearAllAttendance() {
+  if (!token) return;
+  const doClear = async () => {
+    showLoader(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/attendance`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || 'All attendance records deleted.', 'success');
+        await fetchAttendanceRecords(getFilterValues());
+        await fetchDashboardStats();
+      } else {
+        showToast(data.message || 'Failed to clear records.', 'error');
+      }
+    } catch (error) {
+      console.error('Clear attendance error:', error);
+      showToast('Failed to clear attendance records.', 'error');
+    } finally {
+      showLoader(false);
+    }
+  };
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Clear All Attendance Records?',
+      text: 'Are you sure you want to permanently delete ALL attendance logs? This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, clear all!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        doClear();
+      }
+    });
+  } else if (confirm('Are you sure you want to permanently delete ALL attendance records?')) {
+    doClear();
+  }
+}
+
+const btnClearAttendanceBtn = document.getElementById('btnClearAttendanceBtn');
+if (btnClearAttendanceBtn) {
+  btnClearAttendanceBtn.addEventListener('click', clearAllAttendance);
+}
 
 // ==========================================
 // REAL-TIME WEBSOCKET INTEGRATION
@@ -547,7 +700,7 @@ function addLiveAlert(record, type) {
     <i class="fa-solid ${icon} alert-icon"></i>
     <div class="alert-content">
       <strong>${record.name}</strong> <code>${record.enrollment_no}</code> ${actionText} the library${durationText}.
-      <div class="alert-time">${record.entry_date} @ ${time}</div>
+      <div class="alert-time">${formatDateDDMMYYYY(record.entry_date)} @ ${formatTimeDisplay(time)}</div>
     </div>
   `;
 
@@ -754,17 +907,19 @@ exportCsvBtn.addEventListener('click', () => {
     return;
   }
 
-  const headers = ['Entry Date', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Exit Date', 'Exit Time', 'Duration', 'Status'];
+  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
   const rows = allRecords.map(rec => [
-    rec.entry_date,
+    formatDateDDMMYYYY(rec.entry_date),
     rec.name,
     rec.enrollment_no,
     rec.department,
     rec.course,
     rec.semester,
-    rec.entry_time,
-    rec.exit_date || '-',
-    rec.exit_time || '-',
+    formatTimeDisplay(rec.entry_time),
+    rec.entry_location_name || '-',
+    formatDistanceDisplay(rec.distance_meters),
+    formatDateDDMMYYYY(rec.exit_date),
+    formatTimeDisplay(rec.exit_time),
     rec.duration || '-',
     rec.status
   ]);
@@ -778,9 +933,10 @@ exportCsvBtn.addEventListener('click', () => {
   });
 
   const encodedUri = encodeURI(csvContent);
+  const exportDateStr = formatDateDDMMYYYY(getFormattedOffsetDate(0)).replace(/\//g, '-');
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `Library_Attendance_Report_${getFormattedOffsetDate(0)}.csv`);
+  link.setAttribute("download", `Library_Attendance_Report_${exportDateStr}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -794,17 +950,19 @@ exportExcelBtn.addEventListener('click', () => {
     return;
   }
 
-  const headers = ['Entry Date', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Exit Date', 'Exit Time', 'Duration', 'Status'];
+  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
   const rows = allRecords.map(rec => [
-    rec.entry_date,
+    formatDateDDMMYYYY(rec.entry_date),
     rec.name,
     rec.enrollment_no,
     rec.department,
     rec.course,
     rec.semester,
-    rec.entry_time,
-    rec.exit_date || '-',
-    rec.exit_time || '-',
+    formatTimeDisplay(rec.entry_time),
+    rec.entry_location_name || '-',
+    formatDistanceDisplay(rec.distance_meters),
+    formatDateDDMMYYYY(rec.exit_date),
+    formatTimeDisplay(rec.exit_time),
     rec.duration || '-',
     rec.status
   ]);
@@ -816,7 +974,8 @@ exportExcelBtn.addEventListener('click', () => {
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   XLSX.utils.book_append_sheet(wb, ws, "AttendanceLogs");
 
-  XLSX.writeFile(wb, `Library_Attendance_Report_${getFormattedOffsetDate(0)}.xlsx`);
+  const exportDateStr = formatDateDDMMYYYY(getFormattedOffsetDate(0)).replace(/\//g, '-');
+  XLSX.writeFile(wb, `Library_Attendance_Report_${exportDateStr}.xlsx`);
   showToast('Excel document generated successfully.', 'success');
 });
 
@@ -840,19 +999,20 @@ exportPdfBtn.addEventListener('click', () => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    doc.text(`Generated on: ${new Date().toLocaleString()} | Total Logs: ${allRecords.length}`, 14, 25);
+    doc.text(`Generated on: ${new Date().toLocaleString('en-IN')} | Total Logs: ${allRecords.length}`, 14, 25);
 
     // AutoTable mapping
-    const headers = [['Entry Date', 'Student Name', 'Enrollment No', 'Department', 'Course & Sem', 'Entry Time', 'Exit Date', 'Exit Time', 'Duration', 'Status']];
+    const headers = [['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course & Sem', 'Entry Time', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status']];
     const data = allRecords.map(rec => [
-      rec.entry_date,
+      formatDateDDMMYYYY(rec.entry_date),
       rec.name,
       rec.enrollment_no,
       rec.department,
       `${rec.course} (${rec.semester})`,
-      rec.entry_time,
-      rec.exit_date || '-',
-      rec.exit_time || '-',
+      formatTimeDisplay(rec.entry_time),
+      formatDistanceDisplay(rec.distance_meters),
+      formatDateDDMMYYYY(rec.exit_date),
+      formatTimeDisplay(rec.exit_time),
       rec.duration || '-',
       rec.status
     ]);
@@ -870,7 +1030,8 @@ exportPdfBtn.addEventListener('click', () => {
       }
     });
 
-    doc.save(`Library_Attendance_Report_${getFormattedOffsetDate(0)}.pdf`);
+    const exportDateStr = formatDateDDMMYYYY(getFormattedOffsetDate(0)).replace(/\//g, '-');
+    doc.save(`Library_Attendance_Report_${exportDateStr}.pdf`);
     showToast('PDF compiled and downloaded successfully.', 'success');
   } catch (error) {
     console.error('PDF compile error:', error);
@@ -1772,8 +1933,8 @@ function renderStudentsDbTable() {
       <td>${student.gender}</td>
       <td><code>${student.plain_password || 'student123'}</code></td>
       <td style="text-align: center;">
-        <button class="btn btn-secondary btn-delete-student" data-id="${student.id}" style="padding: 0.25rem 0.5rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.2); font-size: 0.8rem; background: transparent; height: auto;" title="Delete Student">
-          <i class="fa-solid fa-trash-can"></i>
+        <button class="btn btn-sm btn-danger btn-delete-student" data-id="${student.id}" style="padding: 4px 10px; font-size: 0.8rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Delete Student">
+          <i class="fa-solid fa-trash"></i> Delete
         </button>
       </td>
     `;
@@ -1791,12 +1952,78 @@ function renderStudentsDbTable() {
   document.querySelectorAll('.btn-delete-student').forEach(button => {
     button.addEventListener('click', async (e) => {
       const studentId = button.getAttribute('data-id');
-      const studentName = button.closest('tr').querySelector('td').textContent;
-      if (confirm(`Are you sure you want to delete student "${studentName}"? This will delete all their attendance records.`)) {
+      const row = button.closest('tr');
+      const studentName = row ? row.querySelector('td strong')?.textContent || 'this student' : 'this student';
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Delete Student?',
+          text: `Are you sure you want to delete student "${studentName}"? All their attendance records will also be deleted.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: 'Yes, delete student!'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            await deleteStudent(studentId);
+          }
+        });
+      } else if (confirm(`Are you sure you want to delete student "${studentName}"?`)) {
         await deleteStudent(studentId);
       }
     });
   });
+}
+
+// Bulk Delete All Students
+async function deleteAllStudents() {
+  if (!token) return;
+  const doDeleteAll = async () => {
+    showLoader(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/students`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || 'All students deleted successfully.', 'success');
+        await fetchStudentsDatabaseList();
+        await fetchAttendanceRecords();
+        await fetchDashboardStats();
+      } else {
+        showToast(data.message || 'Failed to delete all students.', 'error');
+      }
+    } catch (error) {
+      console.error('Delete all students error:', error);
+      showToast('Failed to delete all students.', 'error');
+    } finally {
+      showLoader(false);
+    }
+  };
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Delete ALL Students?',
+      text: 'Are you sure you want to permanently delete ALL registered students and their attendance history? This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete all!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        doDeleteAll();
+      }
+    });
+  } else if (confirm('Are you sure you want to permanently delete ALL students?')) {
+    doDeleteAll();
+  }
+}
+
+const btnDeleteAllStudents = document.getElementById('btnDeleteAllStudents');
+if (btnDeleteAllStudents) {
+  btnDeleteAllStudents.addEventListener('click', deleteAllStudents);
 }
 
 // Delete student record

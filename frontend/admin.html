@@ -395,6 +395,9 @@
                 <button class="btn btn-primary" id="exportPdfBtn" style="background-color: var(--danger);">
                   <i class="fa-regular fa-file-pdf"></i> PDF
                 </button>
+                <button class="btn btn-secondary" id="btnClearAttendanceBtn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" title="Delete all attendance logs">
+                  <i class="fa-solid fa-trash-can"></i> Clear All
+                </button>
               </div>
             </div>
 
@@ -403,23 +406,24 @@
               <table id="attendanceTable">
                 <thead>
                   <tr>
-                    <th>Entry Date</th>
+                    <th>Entry Date (DD/MM/YYYY)</th>
                     <th>Student Name</th>
                     <th>Enrollment No</th>
                     <th>Department</th>
                     <th>Course & Sem</th>
                     <th>Entry Time</th>
                     <th>Entry Location</th>
-                    <th>Distance (Meters)</th>
-                    <th>Exit Date</th>
+                    <th>Distance</th>
+                    <th>Exit Date (DD/MM/YYYY)</th>
                     <th>Exit Time</th>
                     <th>Duration</th>
                     <th>Status</th>
+                    <th style="text-align: center; width: 90px;">Action</th>
                   </tr>
                 </thead>
                 <tbody id="attendanceTableBody">
                   <tr>
-                    <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                    <td colspan="13" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
                       Loading logs...
                     </td>
                   </tr>
@@ -555,11 +559,14 @@
                 <i class="fa-solid fa-users" style="color: var(--primary);"></i> Students Database
               </h3>
               
-              <div style="display: flex; gap: 0.75rem; align-items: center; width: 100%; max-width: 400px; margin-left: auto;">
+              <div style="display: flex; gap: 0.75rem; align-items: center; width: 100%; max-width: 550px; margin-left: auto;">
                 <div style="position: relative; flex-grow: 1;">
                   <input type="text" id="studentsDbSearchInput" class="form-control" placeholder="Search by name, enrollment, department..." style="padding-left: 2.5rem; height: 38px;">
                   <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
                 </div>
+                <button class="btn btn-danger" id="btnDeleteAllStudents" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; background: #ef4444; color: white; white-space: nowrap; padding: 0 1rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;" title="Delete all students from database">
+                  <i class="fa-solid fa-trash-can"></i> Delete All Students
+                </button>
               </div>
             </div>
 

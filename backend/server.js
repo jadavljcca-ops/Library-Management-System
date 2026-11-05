@@ -1,6 +1,9 @@
 // server.js
 // Express Server for Smart Library QR Entry Management System
 
+// Enforce Indian Standard Time (IST) globally across server runtime
+process.env.TZ = 'Asia/Kolkata';
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -76,33 +79,70 @@ io.on('connection', (socket) => {
   });
 });
 
-// Time Helper Functions (Using local time)
-function getLocalDateString() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const date = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${date}`;
+// Time Helper Functions (Strict Indian Standard Time - IST / Asia/Kolkata)
+function getLocalDateString(dateObj = new Date()) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(dateObj); // YYYY-MM-DD
+  } catch (e) {
+    const d = new Date(dateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
+  }
 }
 
-function getLocalTimeString() {
-  const d = new Date();
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
+function getLocalTimeString(dateObj = new Date()) {
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(dateObj); // HH:MM:SS in 24-hr format (00:00:00 - 23:59:59)
+  } catch (e) {
+    const d = new Date(dateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
 }
 
 // Calculate Duration between Entry and Exit
 function calculateDuration(entryDateStr, entryTimeStr, exitDateStr, exitTimeStr) {
   try {
-    const entryStr = `${entryDateStr}T${entryTimeStr}`;
-    const exitStr = `${exitDateStr}T${exitTimeStr}`;
-    const entry = new Date(entryStr);
-    const exit = new Date(exitStr);
+    if (!entryDateStr || !entryTimeStr || !exitDateStr || !exitTimeStr) return '0s';
 
-    let diffMs = exit - entry;
-    if (isNaN(diffMs) || diffMs < 0) return '0s';
+    function parseTime(timeStr) {
+      const isPM = /pm/i.test(timeStr);
+      const isAM = /am/i.test(timeStr);
+      const clean = String(timeStr).replace(/[^\d:]/g, '');
+      const parts = clean.split(':').map(Number);
+      let h = parts[0] || 0;
+      const m = parts[1] || 0;
+      const s = parts[2] || 0;
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+      return { h, m, s };
+    }
+
+    const [eYear, eMonth, eDay] = String(entryDateStr).split('T')[0].split('-').map(Number);
+    const { h: eHour, m: eMin, s: eSec } = parseTime(entryTimeStr);
+    const entryDate = new Date(eYear, eMonth - 1, eDay, eHour, eMin, eSec);
+
+    const [xYear, xMonth, xDay] = String(exitDateStr).split('T')[0].split('-').map(Number);
+    const { h: xHour, m: xMin, s: xSec } = parseTime(exitTimeStr);
+    const exitDate = new Date(xYear, xMonth - 1, xDay, xHour, xMin, xSec);
+
+    let diffMs = exitDate.getTime() - entryDate.getTime();
+    if (isNaN(diffMs) || diffMs <= 0) return '0s';
 
     const diffSecs = Math.floor(diffMs / 1000);
     const hours = Math.floor(diffSecs / 3600);
@@ -595,13 +635,19 @@ app.post('/api/attendance/scan', authenticateToken, async (req, res) => {
       [studentId]
     );
 
-    const todayDate = getLocalDateString();
-    const todayTime = getLocalTimeString();
+    // Real-time Date and Time in Indian Standard Time (IST)
+    const todayDate = (req.body.clientDate && /^\d{4}-\d{2}-\d{2}$/.test(req.body.clientDate))
+      ? req.body.clientDate
+      : getLocalDateString();
+
+    const todayTime = (req.body.clientTime && /^\d{2}:\d{2}(:\d{2})?$/.test(req.body.clientTime))
+      ? (req.body.clientTime.length === 5 ? `${req.body.clientTime}:00` : req.body.clientTime)
+      : getLocalTimeString();
 
     if (activeSessionQuery.rows.length === 0) {
       // Fetch library coordinates from settings
-      let libLat = 23.0225; // default fallback
-      let libLng = 72.5714; // default fallback
+      let libLat = 22.3539687; // default fallback campus location
+      let libLng = 71.7166592; // default fallback campus location
 
       try {
         const latSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_latitude'");
@@ -880,6 +926,32 @@ app.get('/api/admin/attendance-records', authenticateToken, requireAdmin, async 
   }
 });
 
+// Delete Single Attendance Record (Admin Only)
+app.delete('/api/admin/attendance/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const attendanceId = req.params.id;
+  try {
+    const result = await db.query('DELETE FROM attendance WHERE id = ?', [attendanceId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Attendance record not found.' });
+    }
+    res.json({ success: true, message: 'Attendance record deleted successfully.' });
+  } catch (error) {
+    console.error('Delete attendance record error:', error);
+    res.status(500).json({ success: false, message: 'Server error deleting attendance record.' });
+  }
+});
+
+// Delete All Attendance Records (Admin Only)
+app.delete('/api/admin/attendance', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await db.query('DELETE FROM attendance');
+    res.json({ success: true, message: 'All attendance records deleted successfully.' });
+  } catch (error) {
+    console.error('Clear all attendance error:', error);
+    res.status(500).json({ success: false, message: 'Server error deleting attendance records.' });
+  }
+});
+
 // Fetch All Registered Students (Admin Only)
 app.get('/api/admin/students', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -971,11 +1043,24 @@ app.post('/api/admin/students/import', authenticateToken, requireAdmin, async (r
   }
 });
 
-// Delete Student Record (Admin Only)
+// Delete All Registered Students (Admin Only)
+app.delete('/api/admin/students', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await db.query('DELETE FROM attendance');
+    await db.query('DELETE FROM students');
+    res.json({ success: true, message: 'All registered students and attendance records deleted successfully.' });
+  } catch (error) {
+    console.error('Delete all students error:', error);
+    res.status(500).json({ success: false, message: 'Server error deleting all students.' });
+  }
+});
+
+// Delete Single Student Record (Admin Only)
 app.delete('/api/admin/students/:id', authenticateToken, requireAdmin, async (req, res) => {
   const studentId = req.params.id;
 
   try {
+    await db.query('DELETE FROM attendance WHERE student_id = ?', [studentId]);
     const result = await db.query('DELETE FROM students WHERE id = ?', [studentId]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Student not found.' });
@@ -993,8 +1078,8 @@ app.get('/api/admin/settings/library-location', authenticateToken, requireAdmin,
     const latSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_latitude'");
     const lngSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_longitude'");
 
-    let latitude = '23.0225'; // Default fallback
-    let longitude = '72.5714'; // Default fallback
+    let latitude = '22.3539687'; // Default fallback campus location
+    let longitude = '71.7166592'; // Default fallback campus location
 
     if (latSetting.rows.length > 0 && latSetting.rows[0].value_text) {
       latitude = latSetting.rows[0].value_text;
