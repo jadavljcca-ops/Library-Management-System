@@ -266,32 +266,34 @@ async function submitQRScan(qrContent) {
       // Trigger SweetAlert popup
       if (typeof Swal !== 'undefined') {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const record = data.data || {};
         Swal.fire({
           icon: isEntry ? 'success' : 'info',
-          title: isEntry ? 'Entry Recorded! 📚' : 'Exit Recorded! 🚪',
+          title: isEntry ? 'Student Entry Registered! 📖' : 'Student Exit Registered! 🚪',
           html: `
-            <div style="text-align: center; padding: 10px 5px;">
-              <h3 style="margin-bottom: 8px; color: ${isEntry ? '#10b981' : '#6366f1'}; font-size: 1.25rem; font-weight: 700;">
-                ${isEntry ? 'Welcome to the Library!' : 'Visit Again Soon!'}
-              </h3>
-              <p style="margin: 6px 0; font-size: 0.95rem; color: ${isDark ? '#cbd5e1' : '#475569'};">
-                ${isEntry ? 'Your entry attendance has been registered successfully.' : `Total Session Duration: <b style="color: #f59e0b;">${data.data?.duration || 'Recorded'}</b>`}
-              </p>
-              <div style="display: inline-block; margin: 8px 0; padding: 4px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; background: ${isEntry ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; color: ${isEntry ? '#10b981' : '#6366f1'};">
-                Status: ${isEntry ? '🟢 INSIDE LIBRARY' : '🔴 EXITED'}
+            <div style="text-align: left; background: ${isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc'}; padding: 14px 18px; border-radius: 12px; margin-top: 10px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'};">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 1.15rem; font-weight: 700; color: ${isEntry ? '#10b981' : '#6366f1'};">${record.name || (currentStudent && currentStudent.name) || 'Student'}</span>
+                <span style="font-size: 0.8rem; padding: 3px 10px; border-radius: 12px; font-weight: 700; background: ${isEntry ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; color: ${isEntry ? '#10b981' : '#6366f1'};">
+                  ${isEntry ? '🟢 INSIDE' : '🔴 EXITED'}
+                </span>
               </div>
-              <p style="margin-top: 8px; font-size: 0.85rem; color: #94a3b8;">
-                Time: ${isEntry ? (data.data?.entry_time || new Date().toLocaleTimeString()) : (data.data?.exit_time || new Date().toLocaleTimeString())}
-              </p>
+              <div style="font-size: 0.92rem; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
+                <div><strong>Enrollment No:</strong> <code style="font-size: 0.9rem; font-weight: 600;">${record.enrollment_no || (currentStudent && currentStudent.enrollment_no) || 'N/A'}</code></div>
+                ${(record.department || (currentStudent && currentStudent.department)) ? `<div><strong>Department:</strong> ${record.department || currentStudent.department} ${record.course || (currentStudent && currentStudent.course) ? `(${record.course || currentStudent.course})` : ''}</div>` : ''}
+                <div><strong>Time:</strong> ${isEntry ? (record.entry_time || '-') : (record.exit_time || '-')}</div>
+                ${!isEntry && record.duration ? `<div><strong>Duration:</strong> <span style="font-weight: 700; color: #f59e0b;">${record.duration}</span></div>` : ''}
+              </div>
             </div>
           `,
-          timer: 4000,
+          timer: 5000,
           timerProgressBar: true,
           showConfirmButton: true,
-          confirmButtonText: 'Great!',
+          confirmButtonText: 'Dismiss',
           confirmButtonColor: isEntry ? '#10b981' : '#6366f1',
           background: isDark ? '#131b2e' : '#ffffff',
-          color: isDark ? '#f1f5f9' : '#0f172a'
+          color: isDark ? '#f1f5f9' : '#0f172a',
+          backdrop: 'rgba(0,0,0,0.35)'
         });
       } else {
         showCustomLoginPopup(true, isEntry ? 'Entry Successful 🎉' : 'Exit Successful 🎉');

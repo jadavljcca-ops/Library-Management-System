@@ -504,13 +504,10 @@ function initSocket() {
     // 1. Add alert to Live Activity panel
     addLiveAlert(record, 'entry');
 
-    // 2. SweetAlert & Sweet Alarm notification (replaces toaster)
-    showEntryExitSweetAlert('entry', record);
-
-    // 3. Update stats charts
+    // 2. Update stats charts
     fetchDashboardStats();
 
-    // 4. Append row to records if active
+    // 3. Append row to records if active
     if (sectionReports.style.display === 'block') {
       fetchAttendanceRecords(getFilterValues());
     }
@@ -521,13 +518,10 @@ function initSocket() {
     // 1. Add alert to Live Activity panel
     addLiveAlert(record, 'exit');
 
-    // 2. SweetAlert & Sweet Alarm notification (replaces toaster)
-    showEntryExitSweetAlert('exit', record);
-
-    // 3. Update stats charts
+    // 2. Update stats charts
     fetchDashboardStats();
 
-    // 4. Append row to records if active
+    // 3. Append row to records if active
     if (sectionReports.style.display === 'block') {
       fetchAttendanceRecords(getFilterValues());
     }
