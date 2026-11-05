@@ -3,7 +3,7 @@
 
 // Configuration
 // If your backend is hosted online (e.g. Render / Railway), enter its URL below:
-const BACKEND_URL = ''; 
+const BACKEND_URL = '';
 
 function getApiBaseUrl() {
   if (BACKEND_URL) return BACKEND_URL.replace(/\/$/, '');
@@ -159,7 +159,7 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  
+
   let icon = 'fa-circle-info';
   if (type === 'success') icon = 'fa-circle-check';
   if (type === 'error') icon = 'fa-circle-exclamation';
@@ -197,7 +197,7 @@ function startClock() {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
-    
+
     hours = hours % 12;
     hours = hours ? hours : 12;
     const hoursStr = String(hours).padStart(2, '0');
@@ -241,7 +241,7 @@ async function fetchDashboardStats() {
 // Draw/Update Hourly traffic line chart
 function updateHourlyChart(trendData) {
   const ctx = document.getElementById('hourlyTrendChart').getContext('2d');
-  
+
   // Fill all 24 hours with 0 entries by default
   const hourlyCounts = Array(24).fill(0);
   trendData.forEach(item => {
@@ -309,12 +309,12 @@ function updateDepartmentChart(deptData) {
   const canvas = document.getElementById('departmentChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   const labels = deptData.map(item => item.department || 'Unknown');
   const counts = deptData.map(item => item.count);
 
   const colors = [
-    '#6366f1', '#10b981', '#06b6d4', '#f59e0b', 
+    '#6366f1', '#10b981', '#06b6d4', '#f59e0b',
     '#ec4899', '#8b5cf6', '#3b82f6', '#14b8a6'
   ];
 
@@ -391,7 +391,7 @@ async function fetchAttendanceRecords(filters = {}) {
 // Render paginated records
 function renderTable() {
   attendanceTableBody.innerHTML = '';
-  
+
   if (allRecords.length === 0) {
     attendanceTableBody.innerHTML = `
       <tr>
@@ -412,12 +412,12 @@ function renderTable() {
 
   paginatedData.forEach(row => {
     const tr = document.createElement('tr');
-    
+
     // Status Badge
     const isInside = row.status === 'Inside';
     const statusClass = isInside ? 'badge-success' : 'badge-info';
     const statusText = isInside ? 'Inside' : 'Exited';
-    
+
     tr.innerHTML = `
       <td><strong>${row.entry_date}</strong></td>
       <td>${row.name}</td>
@@ -643,7 +643,7 @@ function playBeep(frequency = 440, duration = 0.1) {
     gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
     oscillator.start(audioCtx.currentTime);
     oscillator.stop(audioCtx.currentTime + duration);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // ==========================================
@@ -693,7 +693,7 @@ btnWeeklyReport.addEventListener('click', () => {
   const today = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(today.getDate() - 7);
-  
+
   // We can perform this filtering locally on allRecords or fetch all and filter
   // For safety, fetch all and filter locally
   fetchAttendanceRecords().then(() => {
@@ -712,7 +712,7 @@ btnMonthlyReport.addEventListener('click', () => {
   const today = new Date();
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(today.getDate() - 30);
-  
+
   fetchAttendanceRecords().then(() => {
     allRecords = allRecords.filter(rec => {
       const recDate = new Date(rec.entry_date);
@@ -792,11 +792,11 @@ exportExcelBtn.addEventListener('click', () => {
 
   // Combine into worksheet data
   const wsData = [headers, ...rows];
-  
+
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   XLSX.utils.book_append_sheet(wb, ws, "AttendanceLogs");
-  
+
   XLSX.writeFile(wb, `Library_Attendance_Report_${getFormattedOffsetDate(0)}.xlsx`);
   showToast('Excel document generated successfully.', 'success');
 });
@@ -817,12 +817,12 @@ exportPdfBtn.addEventListener('click', () => {
     doc.setFontSize(20);
     doc.setTextColor(79, 70, 229); // Indigo theme color
     doc.text("SMART LIBRARY SYSTEM - ATTENDANCE REPORT", 14, 18);
-    
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
     doc.text(`Generated on: ${new Date().toLocaleString()} | Total Logs: ${allRecords.length}`, 14, 25);
-    
+
     // AutoTable mapping
     const headers = [['Entry Date', 'Student Name', 'Enrollment No', 'Department', 'Course & Sem', 'Entry Time', 'Exit Date', 'Exit Time', 'Duration', 'Status']];
     const data = allRecords.map(rec => [
@@ -864,7 +864,7 @@ exportPdfBtn.addEventListener('click', () => {
 // ==========================================
 async function fetchRegisteredStudents() {
   if (!token) return;
-  
+
   registeredStudentsTableBody.innerHTML = `
     <tr>
       <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
@@ -929,7 +929,7 @@ if (studentsSearchInput) {
       renderRegisteredStudents(registeredStudentsList);
       return;
     }
-    const filtered = registeredStudentsList.filter(student => 
+    const filtered = registeredStudentsList.filter(student =>
       student.name.toLowerCase().includes(query) ||
       student.enrollment_no.toLowerCase().includes(query) ||
       student.email.toLowerCase().includes(query) ||
@@ -1001,7 +1001,7 @@ const adminSidebar = document.getElementById('adminSidebar') || document.querySe
 function toggleMobileSidebar(forceState) {
   if (!adminSidebar) return;
   const isOpen = forceState !== undefined ? forceState : !adminSidebar.classList.contains('open');
-  
+
   if (isOpen) {
     adminSidebar.classList.add('open');
     if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
@@ -1151,8 +1151,8 @@ adminLoginForm.addEventListener('submit', async (e) => {
       data = await res.json();
     } else {
       const isGitHub = window.location.hostname.includes('github.io');
-      const msg = isGitHub 
-        ? 'GitHub Pages cannot run Node.js backend. Please open the system at http://localhost:5000 on your computer, or host the backend on Render/Railway.' 
+      const msg = isGitHub
+        ? 'GitHub Pages cannot run Node.js backend. Please open the system at http://localhost:5000 on your computer, or host the backend on Render/Railway.'
         : `Server returned non-JSON response (${res.status}). Ensure backend is running.`;
       showCustomLoginPopup(false, msg);
       return;
@@ -1181,8 +1181,8 @@ adminLoginForm.addEventListener('submit', async (e) => {
   } catch (error) {
     console.error('Admin Login error:', error);
     const isGitHub = window.location.hostname.includes('github.io');
-    showCustomLoginPopup(false, isGitHub 
-      ? 'GitHub Pages only hosts static files. To use the app, run the backend and open http://localhost:5000' 
+    showCustomLoginPopup(false, isGitHub
+      ? 'GitHub Pages only hosts static files. To use the app, run the backend and open http://localhost:5000'
       : (error.message || 'Control database server is offline.'));
   } finally {
     showLoader(false);
@@ -1369,49 +1369,49 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderLibraryQRCode() {
-  const configQR = document.getElementById('activeQRConfig');
-  const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
-  const qrCanvas = document.getElementById('adminQRCanvas');
-  if (qrCanvas && typeof QRious !== 'undefined') {
-    new QRious({
-      element: qrCanvas,
-      value: qrValue,
-      size: 220,
-      background: '#ffffff',
-      foreground: '#000000'
-    });
+    const configQR = document.getElementById('activeQRConfig');
+    const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+    const qrCanvas = document.getElementById('adminQRCanvas');
+    if (qrCanvas && typeof QRious !== 'undefined') {
+      new QRious({
+        element: qrCanvas,
+        value: qrValue,
+        size: 220,
+        background: '#ffffff',
+        foreground: '#000000'
+      });
+    }
   }
-}
 
-function downloadQRCode(format) {
-  const qrCanvas = document.getElementById('adminQRCanvas');
-  const configQR = document.getElementById('activeQRConfig');
-  const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
-  if (!qrCanvas) return;
+  function downloadQRCode(format) {
+    const qrCanvas = document.getElementById('adminQRCanvas');
+    const configQR = document.getElementById('activeQRConfig');
+    const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+    if (!qrCanvas) return;
 
-  // Solid white background canvas to avoid black backgrounds on JPEG
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = qrCanvas.width;
-  tempCanvas.height = qrCanvas.height;
-  const ctx = tempCanvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-  ctx.drawImage(qrCanvas, 0, 0);
+    // Solid white background canvas to avoid black backgrounds on JPEG
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = qrCanvas.width;
+    tempCanvas.height = qrCanvas.height;
+    const ctx = tempCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    ctx.drawImage(qrCanvas, 0, 0);
 
-  const isJpg = format === 'jpeg' || format === 'jpg';
-  const mimeType = isJpg ? 'image/jpeg' : 'image/png';
-  const fileExt = isJpg ? 'jpeg' : 'png';
-  const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
+    const isJpg = format === 'jpeg' || format === 'jpg';
+    const mimeType = isJpg ? 'image/jpeg' : 'image/png';
+    const fileExt = isJpg ? 'jpeg' : 'png';
+    const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
 
-  const downloadLink = document.createElement('a');
-  downloadLink.href = dataUrl;
-  downloadLink.download = `Library_QR_Code_${qrValue}.${fileExt}`;
-  document.body.appendChild(downloadLink);
-  downloadLink.click();
-  document.body.removeChild(downloadLink);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = dataUrl;
+    downloadLink.download = `Library_QR_Code_${qrValue}.${fileExt}`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
 
-  showToast(`QR Code downloaded in .${fileExt.toUpperCase()} format.`, 'success');
-}
+    showToast(`QR Code downloaded in .${fileExt.toUpperCase()} format.`, 'success');
+  }
 
   // Initial QR Code Render
   renderLibraryQRCode();
@@ -1570,7 +1570,7 @@ function downloadQRCode(format) {
       if (!query) {
         filteredStudentsDb = [...allStudentsDb];
       } else {
-        filteredStudentsDb = allStudentsDb.filter(student => 
+        filteredStudentsDb = allStudentsDb.filter(student =>
           student.name.toLowerCase().includes(query) ||
           student.enrollment_no.toLowerCase().includes(query) ||
           student.email.toLowerCase().includes(query) ||
@@ -1646,7 +1646,7 @@ async function fetchStudentsDatabaseList() {
 function renderStudentsDbTable() {
   if (!studentsDbTableBody) return;
   studentsDbTableBody.innerHTML = '';
-  
+
   if (filteredStudentsDb.length === 0) {
     studentsDbTableBody.innerHTML = `
       <tr>
@@ -1738,7 +1738,7 @@ function mapImportedData(rawRows) {
     Object.keys(row).forEach(key => {
       const val = String(row[key] !== undefined && row[key] !== null ? row[key] : '').trim();
       const normalizedKey = key.toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
-      
+
       if (normalizedKey.includes('name')) {
         student.name = val;
       } else if (normalizedKey.includes('enrollment') || normalizedKey.includes('roll')) {
@@ -1788,7 +1788,7 @@ function handleStudentFileUpload(file) {
   }
 
   showLoader(true);
-  
+
   const processParsedData = (parsedList) => {
     previewStudentsList = parsedList;
     showLoader(false);
@@ -1800,7 +1800,7 @@ function handleStudentFileUpload(file) {
   const reader = new FileReader();
 
   if (extension === 'json') {
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       try {
         const rawData = JSON.parse(e.target.result);
         const list = Array.isArray(rawData) ? rawData : [rawData];
@@ -1814,7 +1814,7 @@ function handleStudentFileUpload(file) {
     reader.readAsText(file);
   } else {
     // Excel/CSV using SheetJS
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -1837,7 +1837,7 @@ function handleStudentFileUpload(file) {
 function renderPreviewTable() {
   if (!previewTableBody) return;
   previewTableBody.innerHTML = '';
-  
+
   if (previewCountText) {
     previewCountText.textContent = previewStudentsList.length;
   }
@@ -1912,7 +1912,7 @@ async function confirmPreviewAndImport() {
     showToast('No students to import. Add rows first.', 'error');
     return;
   }
-  
+
   // Basic validation of fields
   const invalidRows = previewStudentsList.filter(s => !s.name || !s.enrollment_no || !s.email || !s.password || !String(s.password).trim());
   if (invalidRows.length > 0) {
@@ -1924,7 +1924,7 @@ async function confirmPreviewAndImport() {
   try {
     const res = await fetch(`${API_URL}/api/admin/students/import`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
@@ -1955,10 +1955,10 @@ async function confirmPreviewAndImport() {
 function downloadCSVTemplate() {
   const headers = ['name', 'enrollment_no', 'email', 'mobile', 'department', 'course', 'semester', 'gender', 'password'];
   const sampleRow = ['John Doe', 'EN10024', 'john.doe@college.edu', '9876543210', 'Computer Science', 'B.Tech', '3rd', 'Male', 'student123'];
-  
-  const csvContent = "data:text/csv;charset=utf-8," 
+
+  const csvContent = "data:text/csv;charset=utf-8,"
     + [headers.join(','), sampleRow.join(',')].join('\n');
-  
+
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
@@ -1974,19 +1974,19 @@ function showCustomLoginPopup(isSuccess, message, callback) {
   // Create overlay with blur
   const overlay = document.createElement('div');
   overlay.className = 'custom-login-overlay';
-  
+
   // Create popup content
   const popup = document.createElement('div');
   popup.className = 'custom-login-popup ' + (isSuccess ? 'success' : 'error');
-  
+
   const icon = document.createElement('div');
   icon.className = 'custom-login-icon';
   icon.innerText = isSuccess ? '🎉' : '❌';
-  
+
   const text = document.createElement('div');
   text.className = 'custom-login-text';
   text.innerText = isSuccess ? 'Successfully!' : (message || 'Login failed.');
-  
+
   popup.appendChild(icon);
   popup.appendChild(text);
   overlay.appendChild(popup);
@@ -2017,7 +2017,7 @@ function showCustomLoginPopup(isSuccess, message, callback) {
           colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
           zIndex: 999999
         });
-        
+
         if (Date.now() < end) {
           requestAnimationFrame(frame);
         }
