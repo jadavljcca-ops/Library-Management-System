@@ -1112,6 +1112,8 @@ function navigateTo(target) {
     pageTitle.textContent = 'Dashboard';
     sectionDashboard.style.display = 'block';
     fetchDashboardStats();
+    renderLibraryQRCode();
+    setTimeout(renderLibraryQRCode, 50);
   }
 }
 
@@ -1389,32 +1391,50 @@ adminChangePasswordForm.addEventListener('submit', async (e) => {
 function renderLibraryQRCode() {
   const configQR = document.getElementById('activeQRConfig');
   const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
-  const qrCanvas = document.getElementById('adminQRCanvas');
   
-  if (!qrCanvas) {
-    return;
-  }
-
   if (typeof QRious === 'undefined') {
     console.warn('QRious library is not loaded');
     return;
   }
 
-  try {
-    new QRious({
-      element: qrCanvas,
-      value: qrValue,
-      size: 220,
-      background: '#ffffff',
-      foreground: '#000000'
-    });
-  } catch (err) {
-    console.error('Error rendering QRious QR code:', err);
+  // 1. Render on #adminQRCanvas (Dedicated QR Code Section)
+  const qrCanvas = document.getElementById('adminQRCanvas');
+  if (qrCanvas) {
+    try {
+      new QRious({
+        element: qrCanvas,
+        value: qrValue,
+        size: 220,
+        background: '#ffffff',
+        foreground: '#000000'
+      });
+    } catch (err) {
+      console.error('Error rendering QRious QR code (adminQRCanvas):', err);
+    }
+  }
+
+  // 2. Render on #dashboardQRCanvas (Dashboard QR Code Card)
+  const dashCanvas = document.getElementById('dashboardQRCanvas');
+  if (dashCanvas) {
+    try {
+      new QRious({
+        element: dashCanvas,
+        value: qrValue,
+        size: 200,
+        background: '#ffffff',
+        foreground: '#000000'
+      });
+    } catch (err) {
+      console.error('Error rendering QRious QR code (dashboardQRCanvas):', err);
+    }
   }
 }
 
-function downloadQRCode(format) {
-  const qrCanvas = document.getElementById('adminQRCanvas');
+function downloadQRCode(format, canvasId = 'adminQRCanvas') {
+  let qrCanvas = document.getElementById(canvasId);
+  if (!qrCanvas) {
+    qrCanvas = document.getElementById('adminQRCanvas') || document.getElementById('dashboardQRCanvas');
+  }
   const configQR = document.getElementById('activeQRConfig');
   const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
   if (!qrCanvas) return;
@@ -1443,6 +1463,46 @@ function downloadQRCode(format) {
   showToast(`QR Code downloaded in .${fileExt.toUpperCase()} format.`, 'success');
 }
 
+function printQRCode(canvasId = 'adminQRCanvas') {
+  let qrCanvas = document.getElementById(canvasId);
+  if (!qrCanvas) {
+    qrCanvas = document.getElementById('adminQRCanvas') || document.getElementById('dashboardQRCanvas');
+  }
+  const configQR = document.getElementById('activeQRConfig');
+  const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  if (!qrCanvas) return;
+
+  const url = qrCanvas.toDataURL('image/png');
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    showToast('Please allow popups to print QR Code', 'error');
+    return;
+  }
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Print Library QR Code</title>
+        <style>
+          body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
+          img { width: 300px; height: 300px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; }
+          h1 { margin-bottom: 5px; }
+          p { color: #666; margin-top: 5px; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <h1>Smart Library System</h1>
+        <p>Scan this QR code to Record Entry/Exit</p>
+        <img src="${url}" />
+        <p style="font-weight: bold; margin-top: 15px;">QR Code String: ${qrValue}</p>
+        <script>
+          window.onload = function() { window.print(); window.close(); }
+        <\/script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
 // ==========================================
 // APPLICATION INITIALIZATION
 // ==========================================
@@ -1455,63 +1515,44 @@ function initAdminApp() {
     configQR.textContent = process.env.LIBRARY_QR_CODE || 'SMART_LIBRARY_QR_2026';
   }
 
-  // Initial QR Code Render
+  // Initial QR Code Render (renders both dashboard and dedicated section QR canvases)
   renderLibraryQRCode();
 
-  // QR Actions (Download PNG, Download JPEG, Print)
+  // Dedicated QR Section Actions (Download PNG, Download JPEG, Print)
   const downloadQRPngBtn = document.getElementById('downloadQRPngBtn');
   if (downloadQRPngBtn) {
-    downloadQRPngBtn.onclick = () => downloadQRCode('png');
+    downloadQRPngBtn.onclick = () => downloadQRCode('png', 'adminQRCanvas');
   }
 
   const downloadQRJpgBtn = document.getElementById('downloadQRJpgBtn');
   if (downloadQRJpgBtn) {
-    downloadQRJpgBtn.onclick = () => downloadQRCode('jpeg');
+    downloadQRJpgBtn.onclick = () => downloadQRCode('jpeg', 'adminQRCanvas');
   }
 
   const downloadQRBtn = document.getElementById('downloadQRBtn');
   if (downloadQRBtn) {
-    downloadQRBtn.onclick = () => downloadQRCode('png');
+    downloadQRBtn.onclick = () => downloadQRCode('png', 'adminQRCanvas');
   }
 
   const printQRBtn = document.getElementById('printQRBtn');
   if (printQRBtn) {
-    printQRBtn.onclick = () => {
-      const qrCanvas = document.getElementById('adminQRCanvas');
-      const configQR = document.getElementById('activeQRConfig');
-      const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
-      if (!qrCanvas) return;
+    printQRBtn.onclick = () => printQRCode('adminQRCanvas');
+  }
 
-      const url = qrCanvas.toDataURL('image/png');
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        showToast('Please allow popups to print QR Code', 'error');
-        return;
-      }
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print Library QR Code</title>
-            <style>
-              body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
-              img { width: 300px; height: 300px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; }
-              h1 { margin-bottom: 5px; }
-              p { color: #666; margin-top: 5px; font-size: 14px; }
-            </style>
-          </head>
-          <body>
-            <h1>Smart Library System</h1>
-            <p>Scan this QR code to Record Entry/Exit</p>
-            <img src="${url}" />
-            <p style="font-weight: bold; margin-top: 15px;">QR Code String: ${qrValue}</p>
-            <script>
-              window.onload = function() { window.print(); window.close(); }
-            <\/script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    };
+  // Dashboard QR Section Actions (Download PNG, Download JPEG, Print)
+  const dashDownloadQRPngBtn = document.getElementById('dashDownloadQRPngBtn');
+  if (dashDownloadQRPngBtn) {
+    dashDownloadQRPngBtn.onclick = () => downloadQRCode('png', 'dashboardQRCanvas');
+  }
+
+  const dashDownloadQRJpgBtn = document.getElementById('dashDownloadQRJpgBtn');
+  if (dashDownloadQRJpgBtn) {
+    dashDownloadQRJpgBtn.onclick = () => downloadQRCode('jpeg', 'dashboardQRCanvas');
+  }
+
+  const dashPrintQRBtn = document.getElementById('dashPrintQRBtn');
+  if (dashPrintQRBtn) {
+    dashPrintQRBtn.onclick = () => printQRCode('dashboardQRCanvas');
   }
 
   // File upload input change
