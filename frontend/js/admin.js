@@ -1036,12 +1036,15 @@ if (mobileSidebarClose) {
   mobileSidebarClose.addEventListener('click', () => toggleMobileSidebar(false));
 }
 
+function openAdminSettings() {
+  toggleMobileSidebar(false);
+  if (adminSettingsModal) adminSettingsModal.classList.add('active');
+  loadAdminProfile();
+}
+
 const sidebarAdminBadge = document.getElementById('sidebarAdminBadge');
 if (sidebarAdminBadge) {
-  sidebarAdminBadge.addEventListener('click', () => {
-    toggleMobileSidebar(false);
-    if (adminSettingsBtn) adminSettingsBtn.click();
-  });
+  sidebarAdminBadge.addEventListener('click', openAdminSettings);
 }
 
 // ==========================================
@@ -1202,11 +1205,9 @@ function logout() {
 adminLogoutBtn.addEventListener('click', logout);
 
 // Modals Triggers
-adminSettingsBtn.addEventListener('click', () => {
-  toggleMobileSidebar(false);
-  adminSettingsModal.classList.add('active');
-  loadAdminProfile();
-});
+if (adminSettingsBtn) {
+  adminSettingsBtn.addEventListener('click', openAdminSettings);
+}
 closeAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
 cancelAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
 

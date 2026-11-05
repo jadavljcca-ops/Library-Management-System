@@ -100,7 +100,7 @@ function calculateDuration(entryDateStr, entryTimeStr, exitDateStr, exitTimeStr)
     const exitStr = `${exitDateStr}T${exitTimeStr}`;
     const entry = new Date(entryStr);
     const exit = new Date(exitStr);
-    
+
     let diffMs = exit - entry;
     if (isNaN(diffMs) || diffMs < 0) return '0s';
 
@@ -126,9 +126,9 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000; // Radius of the Earth in meters
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c; // Distance in meters
@@ -139,7 +139,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 function reverseGeocode(lat, lon) {
   return new Promise((resolve) => {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-    
+
     const options = {
       headers: {
         'User-Agent': 'LibraryManagementSystem/1.0 (contact@librarysystem.com)'
@@ -350,7 +350,7 @@ app.post('/api/auth/login', async (req, res) => {
       if (!isStudentMatch && student.password) {
         try {
           isStudentMatch = await bcrypt.compare(cleanInput, student.password);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (isStudentMatch) {
@@ -908,7 +908,7 @@ app.post('/api/admin/students/import', authenticateToken, requireAdmin, async (r
 
     for (const student of students) {
       const { name, enrollment_no, email, mobile, department, course, semester, gender, password } = student;
-      
+
       // Basic validation
       if (!name || !enrollment_no || !email || !mobile || !department || !course || !semester || !gender) {
         skippedCount++;
@@ -992,17 +992,17 @@ app.get('/api/admin/settings/library-location', authenticateToken, requireAdmin,
   try {
     const latSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_latitude'");
     const lngSetting = await db.query("SELECT value_text FROM settings WHERE key_name = 'library_longitude'");
-    
+
     let latitude = '23.0225'; // Default fallback
     let longitude = '72.5714'; // Default fallback
-    
+
     if (latSetting.rows.length > 0 && latSetting.rows[0].value_text) {
       latitude = latSetting.rows[0].value_text;
     }
     if (lngSetting.rows.length > 0 && lngSetting.rows[0].value_text) {
       longitude = lngSetting.rows[0].value_text;
     }
-    
+
     res.json({ success: true, latitude, longitude });
   } catch (error) {
     console.error('Fetch library location error:', error);
@@ -1013,22 +1013,22 @@ app.get('/api/admin/settings/library-location', authenticateToken, requireAdmin,
 // Update Library Location Configuration (Admin Only)
 app.post('/api/admin/settings/library-location', authenticateToken, requireAdmin, async (req, res) => {
   const { latitude, longitude } = req.body;
-  
+
   if (latitude === undefined || longitude === undefined || latitude === null || longitude === null) {
     return res.status(400).json({ success: false, message: 'Latitude and Longitude are required.' });
   }
-  
+
   try {
     await db.query("UPDATE settings SET value_text = ? WHERE key_name = 'library_latitude'", [String(latitude)]);
     await db.query("UPDATE settings SET value_text = ? WHERE key_name = 'library_longitude'", [String(longitude)]);
-    
+
     // Ensure they exist in database
     const latCheck = await db.query("SELECT * FROM settings WHERE key_name = 'library_latitude'");
     if (latCheck.rows.length === 0) {
       await db.query("INSERT INTO settings (key_name, value_text) VALUES ('library_latitude', ?)", [String(latitude)]);
       await db.query("INSERT INTO settings (key_name, value_text) VALUES ('library_longitude', ?)", [String(longitude)]);
     }
-    
+
     res.json({ success: true, message: 'Library location coordinates updated successfully.' });
   } catch (error) {
     console.error('Update library location error:', error);
