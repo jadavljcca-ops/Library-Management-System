@@ -2123,3 +2123,15 @@ tr:hover td {
     flex-shrink: 0;
   }
 }
+
+/* Sidebar bottom spacer for mobile */
+.sidebar-bottom-spacer {
+  display: none;
+}
+@media (max-width: 992px) {
+  .sidebar-bottom-spacer {
+    display: block;
+    height: 40px;
+    flex-shrink: 0;
+  }
+}
