@@ -602,7 +602,6 @@ function showDashboardScreen() {
   } else {
     locationVerificationCard.style.display = 'block';
     qrScannerCard.style.display = 'none';
-    btnSubmitLocation.disabled = true;
     studentMapContainer.style.display = 'none';
     studentMapIframe.src = '';
     tempCoords = null;
@@ -633,14 +632,12 @@ if (btnVerifyLocation) {
         studentMapIframe.src = `https://maps.google.com/maps?q=${tempCoords.latitude},${tempCoords.longitude}&z=15&output=embed`;
         studentMapContainer.style.display = 'block';
         
-        // Enable Submit Location button
-        btnSubmitLocation.disabled = false;
+        // Location verified
         showToast('Current live location verified! Please submit to unlock scanner.', 'success');
       },
       (error) => {
         showLoader(false);
         btnVerifyLocation.disabled = false;
-        btnSubmitLocation.disabled = true;
         studentMapContainer.style.display = 'none';
         studentMapIframe.src = '';
         tempCoords = null;
@@ -663,7 +660,24 @@ if (btnVerifyLocation) {
 if (btnSubmitLocation) {
   btnSubmitLocation.addEventListener('click', () => {
     if (!tempCoords) {
-      showToast('Please verify your live location first.', 'warning');
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Share your Live Location',
+          text: 'You have not shared your live location yet. Please click "Share Live Location" first to verify your location.',
+          confirmButtonColor: '#4f46e5',
+          confirmButtonText: '<i class="fa-solid fa-location-dot"></i> Share Live Location Now',
+          showCancelButton: true,
+          cancelButtonText: 'Cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            if (btnVerifyLocation) btnVerifyLocation.click();
+          }
+        });
+      } else {
+        alert('Share your Live Location');
+      }
+      showToast('Share your Live Location', 'warning');
       return;
     }
     currentStudentLocation = tempCoords;
