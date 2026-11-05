@@ -46,6 +46,8 @@ const pageTitle = document.getElementById('pageTitle');
 const sectionDashboard = document.getElementById('sectionDashboard');
 const sectionReports = document.getElementById('sectionReports');
 const sectionStudents = document.getElementById('sectionStudents');
+const menuQrCodeBtn = document.getElementById('menuQrCodeBtn');
+const sectionQrCode = document.getElementById('sectionQrCode');
 
 const adminSettingsBtn = document.getElementById('adminSettingsBtn');
 const adminLogoutBtn = document.getElementById('adminLogoutBtn');
@@ -1053,11 +1055,13 @@ function navigateTo(target) {
   menuDashBtn.classList.remove('active');
   menuReportsBtn.classList.remove('active');
   if (menuStudentsBtn) menuStudentsBtn.classList.remove('active');
+  if (menuQrCodeBtn) menuQrCodeBtn.classList.remove('active');
 
   // Hide all sections
   sectionDashboard.style.display = 'none';
   sectionReports.style.display = 'none';
   if (sectionStudents) sectionStudents.style.display = 'none';
+  if (sectionQrCode) sectionQrCode.style.display = 'none';
 
   if (target === 'reports') {
     menuReportsBtn.classList.add('active');
@@ -1069,12 +1073,24 @@ function navigateTo(target) {
     pageTitle.textContent = 'Students Database';
     if (sectionStudents) sectionStudents.style.display = 'block';
     fetchStudentsDatabaseList();
+  } else if (target === 'qrcode') {
+    if (menuQrCodeBtn) menuQrCodeBtn.classList.add('active');
+    pageTitle.textContent = 'Library QR Code';
+    if (sectionQrCode) sectionQrCode.style.display = 'block';
+    renderLibraryQRCode();
   } else {
     menuDashBtn.classList.add('active');
     pageTitle.textContent = 'Dashboard';
     sectionDashboard.style.display = 'block';
     fetchDashboardStats();
   }
+}
+
+if (menuQrCodeBtn) {
+  menuQrCodeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateTo('qrcode');
+  });
 }
 
 menuDashBtn.addEventListener('click', (e) => {
@@ -1351,53 +1367,103 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // QR Actions (Download / Print)
+  function renderLibraryQRCode() {
+  const configQR = document.getElementById('activeQRConfig');
+  const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  const qrCanvas = document.getElementById('adminQRCanvas');
+  if (qrCanvas && typeof QRious !== 'undefined') {
+    new QRious({
+      element: qrCanvas,
+      value: qrValue,
+      size: 220,
+      background: '#ffffff',
+      foreground: '#000000'
+    });
+  }
+}
+
+function downloadQRCode(format) {
+  const qrCanvas = document.getElementById('adminQRCanvas');
+  const configQR = document.getElementById('activeQRConfig');
+  const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  if (!qrCanvas) return;
+
+  // Solid white background canvas to avoid black backgrounds on JPEG
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = qrCanvas.width;
+  tempCanvas.height = qrCanvas.height;
+  const ctx = tempCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+  ctx.drawImage(qrCanvas, 0, 0);
+
+  const isJpg = format === 'jpeg' || format === 'jpg';
+  const mimeType = isJpg ? 'image/jpeg' : 'image/png';
+  const fileExt = isJpg ? 'jpeg' : 'png';
+  const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
+
+  const downloadLink = document.createElement('a');
+  downloadLink.href = dataUrl;
+  downloadLink.download = `Library_QR_Code_${qrValue}.${fileExt}`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+
+  showToast(`QR Code downloaded in .${fileExt.toUpperCase()} format.`, 'success');
+}
+
+  // Initial QR Code Render
+  renderLibraryQRCode();
+
+  // QR Actions (Download PNG, Download JPEG, Print)
+  const downloadQRPngBtn = document.getElementById('downloadQRPngBtn');
+  if (downloadQRPngBtn) {
+    downloadQRPngBtn.addEventListener('click', () => downloadQRCode('png'));
+  }
+
+  const downloadQRJpgBtn = document.getElementById('downloadQRJpgBtn');
+  if (downloadQRJpgBtn) {
+    downloadQRJpgBtn.addEventListener('click', () => downloadQRCode('jpeg'));
+  }
+
   const downloadQRBtn = document.getElementById('downloadQRBtn');
   if (downloadQRBtn) {
-    downloadQRBtn.addEventListener('click', () => {
-      if (qrCanvas) {
-        const url = qrCanvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Library_QR_Code_${qrValue}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showToast('QR Code image downloaded successfully.', 'success');
-      }
-    });
+    downloadQRBtn.addEventListener('click', () => downloadQRCode('png'));
   }
 
   const printQRBtn = document.getElementById('printQRBtn');
   if (printQRBtn) {
     printQRBtn.addEventListener('click', () => {
-      if (qrCanvas) {
-        const url = qrCanvas.toDataURL('image/png');
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Print Library QR Code</title>
-              <style>
-                body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
-                img { width: 300px; height: 300px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; }
-                h1 { margin-bottom: 5px; }
-                p { color: #666; margin-top: 5px; font-size: 14px; }
-              </style>
-            </head>
-            <body>
-              <h1>Smart Library System</h1>
-              <p>Scan this QR code to Record Entry/Exit</p>
-              <img src="${url}" />
-              <p style="font-weight: bold; margin-top: 15px;">QR Code String: ${qrValue}</p>
-              <script>
-                window.onload = function() { window.print(); window.close(); }
-              </script>
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-      }
+      const qrCanvas = document.getElementById('adminQRCanvas');
+      const configQR = document.getElementById('activeQRConfig');
+      const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+      if (!qrCanvas) return;
+
+      const url = qrCanvas.toDataURL('image/png');
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print Library QR Code</title>
+            <style>
+              body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
+              img { width: 300px; height: 300px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; }
+              h1 { margin-bottom: 5px; }
+              p { color: #666; margin-top: 5px; font-size: 14px; }
+            </style>
+          </head>
+          <body>
+            <h1>Smart Library System</h1>
+            <p>Scan this QR code to Record Entry/Exit</p>
+            <img src="${url}" />
+            <p style="font-weight: bold; margin-top: 15px;">QR Code String: ${qrValue}</p>
+            <script>
+              window.onload = function() { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
     });
   }
 
