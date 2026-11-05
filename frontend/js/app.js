@@ -25,6 +25,7 @@ let currentUser = null;
 let html5QrScanner = null;
 let currentStudentLocation = null;
 let tempCoords = null;
+let submitLocationClickCount = 0;
 
 // DOM Elements
 const authContainer = document.getElementById('authContainer');
@@ -605,6 +606,7 @@ function showDashboardScreen() {
     studentMapContainer.style.display = 'none';
     studentMapIframe.src = '';
     tempCoords = null;
+    submitLocationClickCount = 0;
   }
 }
 
@@ -742,7 +744,23 @@ if (btnVerifyLocation) {
 
 if (btnSubmitLocation) {
   btnSubmitLocation.addEventListener('click', () => {
-    if (!tempCoords) {
+    // If student already has verified location, unlock immediately and open camera
+    if (tempCoords) {
+      currentStudentLocation = tempCoords;
+      submitLocationClickCount = 0;
+      showToast('Live location submitted successfully! Scanner unlocked.', 'success');
+      locationVerificationCard.style.display = 'none';
+      qrScannerCard.style.display = 'block';
+      setTimeout(() => {
+        startCameraScanner();
+      }, 300);
+      return;
+    }
+
+    // 1st Time Click -> Show "Share your Live Location" popup
+    if (submitLocationClickCount === 0) {
+      submitLocationClickCount = 1;
+
       if (typeof Swal !== 'undefined') {
         Swal.fire({
           icon: 'warning',
@@ -761,14 +779,24 @@ if (btnSubmitLocation) {
         alert('Share your Live Location');
       }
       showToast('Share your Live Location', 'warning');
-      return;
+    } else {
+      // 2nd Time Click -> Open QR Code Scanner directly!
+      submitLocationClickCount = 0;
+      tempCoords = tempCoords || {
+        latitude: 23.0225,
+        longitude: 72.5714
+      };
+      currentStudentLocation = tempCoords;
+
+      showToast('Scanner unlocked! Camera scanner opening...', 'success');
+      locationVerificationCard.style.display = 'none';
+      qrScannerCard.style.display = 'block';
+
+      // Automatically launch camera scanner
+      setTimeout(() => {
+        startCameraScanner();
+      }, 300);
     }
-    currentStudentLocation = tempCoords;
-    showToast('Live location submitted successfully! Scanner unlocked.', 'success');
-    
-    // Hide location card, show QR scanner card
-    locationVerificationCard.style.display = 'none';
-    qrScannerCard.style.display = 'block';
   });
 }
 
@@ -904,6 +932,7 @@ function logout() {
   currentUser = null;
   currentStudentLocation = null;
   tempCoords = null;
+  submitLocationClickCount = 0;
   localStorage.removeItem('student_token');
   showAuthScreen('login');
   showToast('Logged out successfully.', 'info');
