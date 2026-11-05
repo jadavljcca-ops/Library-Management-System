@@ -7,9 +7,15 @@ const BACKEND_URL = '';
 
 function getApiBaseUrl() {
   if (BACKEND_URL) return BACKEND_URL.replace(/\/$/, '');
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const hostname = window.location.hostname;
+  const isLocal = hostname === 'localhost' || 
+                  hostname === '127.0.0.1' || 
+                  hostname === '[::1]' ||
+                  /^192\.168\./.test(hostname) || 
+                  /^10\./.test(hostname) || 
+                  /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname);
   if (isLocal) {
-    return window.location.port === '5000' ? '' : `http://${window.location.hostname}:5000`;
+    return window.location.port === '5000' ? '' : `http://${hostname}:5000`;
   }
   if (window.location.protocol === 'file:') {
     return 'http://localhost:5000';
@@ -366,9 +372,23 @@ function getChartColorPalette() {
 
 // Fetch report logs with filters
 async function fetchAttendanceRecords(filters = {}) {
-  if (!token) return;
+  if (!token) {
+    logout();
+    return;
+  }
 
-  const urlParams = new URLSearchParams(filters);
+  showLoader(true);
+  const cleanFilters = {};
+  if (filters && typeof filters === 'object') {
+    Object.keys(filters).forEach(k => {
+      const v = filters[k];
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        cleanFilters[k] = String(v).trim();
+      }
+    });
+  }
+  const urlParams = new URLSearchParams(cleanFilters);
+
   try {
     const res = await fetch(`${API_URL}/api/admin/attendance-records?${urlParams.toString()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -376,15 +396,20 @@ async function fetchAttendanceRecords(filters = {}) {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      allRecords = data.records;
+      allRecords = Array.isArray(data.records) ? data.records : [];
       currentPage = 1;
       renderTable();
     } else {
       showToast(data.message || 'Failed to download reports.', 'error');
+      if (res.status === 401 || res.status === 403) {
+        logout();
+      }
     }
   } catch (error) {
     console.error('Fetch attendance records error:', error);
-    showToast('Failed to connect to report database database.', 'error');
+    showToast('Failed to connect to report database.', 'error');
+  } finally {
+    showLoader(false);
   }
 }
 
@@ -1081,6 +1106,7 @@ function navigateTo(target) {
     pageTitle.textContent = 'Library QR Code';
     if (sectionQrCode) sectionQrCode.style.display = 'block';
     renderLibraryQRCode();
+    setTimeout(renderLibraryQRCode, 50);
   } else {
     menuDashBtn.classList.add('active');
     pageTitle.textContent = 'Dashboard';
@@ -1126,10 +1152,14 @@ function showDashboardScreen() {
   adminDashboardContainer.style.display = 'flex';
   startClock();
   fetchDashboardStats();
+  loadAdminProfile();
+  renderLibraryQRCode();
   initSocket();
 
   // Refresh stats every 30s automatically
-  setInterval(fetchDashboardStats, 30000);
+  if (!window._dashboardStatsInterval) {
+    window._dashboardStatsInterval = setInterval(fetchDashboardStats, 30000);
+  }
 }
 
 // Login
@@ -1195,6 +1225,10 @@ function logout() {
   if (socket) {
     socket.disconnect();
     socket = null;
+  }
+  if (window._dashboardStatsInterval) {
+    clearInterval(window._dashboardStatsInterval);
+    window._dashboardStatsInterval = null;
   }
   token = null;
   localStorage.removeItem('admin_token');
@@ -1349,68 +1383,76 @@ adminChangePasswordForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Launch App
-window.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  // Read active QR configuration from .env equivalent variables inside HTML
+// ==========================================
+// QR CODE GENERATION & DOWNLOAD LOGIC
+// ==========================================
+function renderLibraryQRCode() {
   const configQR = document.getElementById('activeQRConfig');
-  if (configQR && typeof process !== 'undefined' && process.env) {
-    configQR.textContent = process.env.LIBRARY_QR_CODE || 'SMART_LIBRARY_QR_2026';
+  const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  const qrCanvas = document.getElementById('adminQRCanvas');
+  
+  if (!qrCanvas) {
+    return;
   }
 
-  const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
-  const qrCanvas = document.getElementById('adminQRCanvas');
-  if (qrCanvas && typeof QRious !== 'undefined') {
+  if (typeof QRious === 'undefined') {
+    console.warn('QRious library is not loaded');
+    return;
+  }
+
+  try {
     new QRious({
       element: qrCanvas,
       value: qrValue,
-      size: 160
+      size: 220,
+      background: '#ffffff',
+      foreground: '#000000'
     });
+  } catch (err) {
+    console.error('Error rendering QRious QR code:', err);
   }
+}
 
-  function renderLibraryQRCode() {
-    const configQR = document.getElementById('activeQRConfig');
-    const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
-    const qrCanvas = document.getElementById('adminQRCanvas');
-    if (qrCanvas && typeof QRious !== 'undefined') {
-      new QRious({
-        element: qrCanvas,
-        value: qrValue,
-        size: 220,
-        background: '#ffffff',
-        foreground: '#000000'
-      });
-    }
-  }
+function downloadQRCode(format) {
+  const qrCanvas = document.getElementById('adminQRCanvas');
+  const configQR = document.getElementById('activeQRConfig');
+  const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  if (!qrCanvas) return;
 
-  function downloadQRCode(format) {
-    const qrCanvas = document.getElementById('adminQRCanvas');
-    const configQR = document.getElementById('activeQRConfig');
-    const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
-    if (!qrCanvas) return;
+  // Solid white background canvas to avoid black backgrounds on JPEG
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = qrCanvas.width || 220;
+  tempCanvas.height = qrCanvas.height || 220;
+  const ctx = tempCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+  ctx.drawImage(qrCanvas, 0, 0);
 
-    // Solid white background canvas to avoid black backgrounds on JPEG
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = qrCanvas.width;
-    tempCanvas.height = qrCanvas.height;
-    const ctx = tempCanvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-    ctx.drawImage(qrCanvas, 0, 0);
+  const isJpg = format === 'jpeg' || format === 'jpg';
+  const mimeType = isJpg ? 'image/jpeg' : 'image/png';
+  const fileExt = isJpg ? 'jpeg' : 'png';
+  const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
 
-    const isJpg = format === 'jpeg' || format === 'jpg';
-    const mimeType = isJpg ? 'image/jpeg' : 'image/png';
-    const fileExt = isJpg ? 'jpeg' : 'png';
-    const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
+  const downloadLink = document.createElement('a');
+  downloadLink.href = dataUrl;
+  downloadLink.download = `Library_QR_Code_${qrValue}.${fileExt}`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
 
-    const downloadLink = document.createElement('a');
-    downloadLink.href = dataUrl;
-    downloadLink.download = `Library_QR_Code_${qrValue}.${fileExt}`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+  showToast(`QR Code downloaded in .${fileExt.toUpperCase()} format.`, 'success');
+}
 
-    showToast(`QR Code downloaded in .${fileExt.toUpperCase()} format.`, 'success');
+// ==========================================
+// APPLICATION INITIALIZATION
+// ==========================================
+function initAdminApp() {
+  initTheme();
+
+  // Read active QR configuration from HTML or process.env
+  const configQR = document.getElementById('activeQRConfig');
+  if (configQR && typeof process !== 'undefined' && process.env) {
+    configQR.textContent = process.env.LIBRARY_QR_CODE || 'SMART_LIBRARY_QR_2026';
   }
 
   // Initial QR Code Render
@@ -1419,29 +1461,33 @@ window.addEventListener('DOMContentLoaded', () => {
   // QR Actions (Download PNG, Download JPEG, Print)
   const downloadQRPngBtn = document.getElementById('downloadQRPngBtn');
   if (downloadQRPngBtn) {
-    downloadQRPngBtn.addEventListener('click', () => downloadQRCode('png'));
+    downloadQRPngBtn.onclick = () => downloadQRCode('png');
   }
 
   const downloadQRJpgBtn = document.getElementById('downloadQRJpgBtn');
   if (downloadQRJpgBtn) {
-    downloadQRJpgBtn.addEventListener('click', () => downloadQRCode('jpeg'));
+    downloadQRJpgBtn.onclick = () => downloadQRCode('jpeg');
   }
 
   const downloadQRBtn = document.getElementById('downloadQRBtn');
   if (downloadQRBtn) {
-    downloadQRBtn.addEventListener('click', () => downloadQRCode('png'));
+    downloadQRBtn.onclick = () => downloadQRCode('png');
   }
 
   const printQRBtn = document.getElementById('printQRBtn');
   if (printQRBtn) {
-    printQRBtn.addEventListener('click', () => {
+    printQRBtn.onclick = () => {
       const qrCanvas = document.getElementById('adminQRCanvas');
       const configQR = document.getElementById('activeQRConfig');
-      const qrValue = configQR ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+      const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
       if (!qrCanvas) return;
 
       const url = qrCanvas.toDataURL('image/png');
       const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showToast('Please allow popups to print QR Code', 'error');
+        return;
+      }
       printWindow.document.write(`
         <html>
           <head>
@@ -1460,12 +1506,12 @@ window.addEventListener('DOMContentLoaded', () => {
             <p style="font-weight: bold; margin-top: 15px;">QR Code String: ${qrValue}</p>
             <script>
               window.onload = function() { window.print(); window.close(); }
-            </script>
+            <\/script>
           </body>
         </html>
       `);
       printWindow.document.close();
-    });
+    };
   }
 
   // File upload input change
@@ -1571,13 +1617,13 @@ window.addEventListener('DOMContentLoaded', () => {
         filteredStudentsDb = [...allStudentsDb];
       } else {
         filteredStudentsDb = allStudentsDb.filter(student =>
-          student.name.toLowerCase().includes(query) ||
-          student.enrollment_no.toLowerCase().includes(query) ||
-          student.email.toLowerCase().includes(query) ||
-          student.department.toLowerCase().includes(query) ||
-          student.course.toLowerCase().includes(query) ||
-          student.semester.toLowerCase().includes(query) ||
-          student.gender.toLowerCase().includes(query)
+          (student.name && student.name.toLowerCase().includes(query)) ||
+          (student.enrollment_no && student.enrollment_no.toLowerCase().includes(query)) ||
+          (student.email && student.email.toLowerCase().includes(query)) ||
+          (student.department && student.department.toLowerCase().includes(query)) ||
+          (student.course && student.course.toLowerCase().includes(query)) ||
+          (student.semester && student.semester.toLowerCase().includes(query)) ||
+          (student.gender && student.gender.toLowerCase().includes(query))
         );
       }
       currentStudentsPage = 1;
@@ -1606,12 +1652,20 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Initial authentication check & screen routing
   if (token) {
     showDashboardScreen();
   } else {
     showAuthScreen();
   }
-});
+}
+
+// Execute immediately if DOM ready, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAdminApp);
+} else {
+  initAdminApp();
+}
 
 // ==========================================
 // STUDENTS DATABASE & BULK IMPORT LOGIC
@@ -1619,7 +1673,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Fetch Students Database list
 async function fetchStudentsDatabaseList() {
-  if (!token) return;
+  if (!token) {
+    logout();
+    return;
+  }
   showLoader(true);
   try {
     const res = await fetch(`${API_URL}/api/admin/students`, {
@@ -1627,12 +1684,15 @@ async function fetchStudentsDatabaseList() {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      allStudentsDb = data.students;
+      allStudentsDb = Array.isArray(data.students) ? data.students : [];
       filteredStudentsDb = [...allStudentsDb];
       currentStudentsPage = 1;
       renderStudentsDbTable();
     } else {
       showToast(data.message || 'Failed to fetch student database records.', 'error');
+      if (res.status === 401 || res.status === 403) {
+        logout();
+      }
     }
   } catch (error) {
     console.error('Fetch student database records error:', error);
