@@ -12,7 +12,13 @@
   <link rel="apple-touch-icon" href="logo.jpg">
 
   <!-- CSS Styles -->
-  <link rel="stylesheet" href="css/style.css">
+  <!-- Anti-Cache Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="css/style.css?v=2.1">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -720,13 +726,22 @@
   <script src="/socket.io/socket.io.js"></script>
   
   <!-- Client-side Admin JavaScript -->
-  <script src="js/admin.js"></script>
+  <script src="js/admin.js?v=2.1"></script>
 
   <!-- PWA Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        for (let key of keys) {
+          caches.delete(key);
+        }
       });
     }
   </script>

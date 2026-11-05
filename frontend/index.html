@@ -13,7 +13,11 @@
   <meta name="theme-color" content="#4a90e2">
 
   <!-- CSS Styles -->
-  <link rel="stylesheet" href="css/landing.css">
+  <!-- Anti-Cache Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="css/landing.css?v=2.1">
 
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -408,10 +412,17 @@
   <script>
     // Register Service Worker
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('Service Worker Registered'))
-          .catch(err => console.log('Service Worker Registration Failed', err));
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        for (let key of keys) {
+          caches.delete(key);
+        }
       });
     }
 
@@ -454,7 +465,7 @@
   </script>
 
   <!-- External Scripts -->
-  <script src="js/landing.js"></script>
+  <script src="js/landing.js?v=2.1"></script>
 </body>
 
 </html>

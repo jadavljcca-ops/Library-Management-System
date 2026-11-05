@@ -33,7 +33,32 @@ const LIBRARY_QR_CODE = process.env.LIBRARY_QR_CODE || 'SMART_LIBRARY_QR_2026';
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend'))); // Serve static frontend files
+
+// Disable caching for all responses so mobile & desktop browsers always get the latest updates
+app.use((req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
+  next();
+});
+
+// Serve static frontend files with caching strictly disabled
+app.use(express.static(path.join(__dirname, '../frontend'), {
+  etag: false,
+  lastModified: false,
+  maxAge: 0,
+  setHeaders: (res) => {
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
+  }
+}));
 
 // Real-time Socket.io connections
 let adminSockets = new Set();

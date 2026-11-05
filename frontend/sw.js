@@ -1,26 +1,28 @@
-const CACHE_NAME = 'smartlib-pwa-v1';
-const urlsToCache = [
-  './index.html',
-  './student.html',
-  './admin.html',
-  './css/landing.css',
-  './css/style.css',
-  './js/app.js',
-  './js/admin.js',
-  './js/landing.js',
-  './logo.jpg'
-];
+// sw.js - Cache Buster & Self-Unregistering Service Worker
+// Automatically clears all cached assets and unregisters to ensure mobile users get fresh changes
 
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          console.log('Clearing old cache:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => {
+      return self.clients.claim();
+    }).then(() => {
+      return self.registration.unregister();
+    })
   );
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-  );
+// Always bypass cache and fetch directly from network
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request, { cache: 'no-store' }));
 });
