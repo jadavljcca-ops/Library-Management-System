@@ -609,52 +609,135 @@ function showDashboardScreen() {
 }
 
 // Event Listeners for Location Verification
-if (btnVerifyLocation) {
-  btnVerifyLocation.addEventListener('click', () => {
-    if (!navigator.geolocation) {
+function requestStudentLocation() {
+  if (!navigator.geolocation) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: 'Geolocation Not Supported',
+        text: 'Your browser does not support geolocation. Please use Google Chrome or Safari.',
+        confirmButtonColor: '#ef4444'
+      });
+    } else {
       showToast('Geolocation is not supported by your browser.', 'error');
-      return;
     }
-    
-    showLoader(true);
-    btnVerifyLocation.disabled = true;
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        showLoader(false);
-        btnVerifyLocation.disabled = false;
-        tempCoords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        };
-        
-        // Show read-only Google Map inside iframe
-        studentMapIframe.src = `https://maps.google.com/maps?q=${tempCoords.latitude},${tempCoords.longitude}&z=15&output=embed`;
-        studentMapContainer.style.display = 'block';
-        
-        // Location verified
-        showToast('Current live location verified! Please submit to unlock scanner.', 'success');
-      },
-      (error) => {
-        showLoader(false);
-        btnVerifyLocation.disabled = false;
-        studentMapContainer.style.display = 'none';
-        studentMapIframe.src = '';
-        tempCoords = null;
-        
-        let errorMsg = 'Failed to retrieve location.';
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMsg = 'Location access denied. Please enable device location permission.';
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorMsg = 'Location information is unavailable.';
-        } else if (error.code === error.TIMEOUT) {
-          errorMsg = 'Location request timed out.';
-        }
-        showToast(errorMsg, 'error');
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  });
+    return;
+  }
+
+  // Check if page is running on insecure HTTP (Geolocation requires HTTPS on mobile/non-localhost)
+  if (window.isSecureContext === false && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'HTTPS Required / સિક્યોર કનેક્શન જરૂરી છે',
+        html: `
+          <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
+            <p>મોબાઇલ બ્રાઉઝર્સ માત્ર <strong>HTTPS (Secure)</strong> કનેક્શન પર જ Location Access ની મંજૂરી આપે છે.</p>
+            <p style="margin-top: 8px;">કૃપા કરીને આ સાઇટને <strong>Render Live URL (https://...)</strong> પર ઓપન કરો.</p>
+          </div>
+        `,
+        confirmButtonColor: '#4f46e5'
+      });
+    } else {
+      showToast('Geolocation requires a secure HTTPS connection.', 'error');
+    }
+    return;
+  }
+
+  showLoader(true);
+  if (btnVerifyLocation) btnVerifyLocation.disabled = true;
+
+  const onLocationSuccess = (position) => {
+    showLoader(false);
+    if (btnVerifyLocation) btnVerifyLocation.disabled = false;
+    tempCoords = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude
+    };
+
+    // Show read-only Google Map inside iframe
+    studentMapIframe.src = `https://maps.google.com/maps?q=${tempCoords.latitude},${tempCoords.longitude}&z=15&output=embed`;
+    studentMapContainer.style.display = 'block';
+
+    showToast('Current live location verified! Please submit to unlock scanner.', 'success');
+  };
+
+  const onLocationError = (error) => {
+    showLoader(false);
+    if (btnVerifyLocation) btnVerifyLocation.disabled = false;
+    studentMapContainer.style.display = 'none';
+    studentMapIframe.src = '';
+    tempCoords = null;
+
+    if (error.code === error.PERMISSION_DENIED) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Location Permission Denied',
+          html: `
+            <div style="text-align: left; font-size: 0.92rem; line-height: 1.6; color: var(--text-color, #1e293b);">
+              <p style="margin-bottom: 8px; font-weight: 600; color: #ef4444;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Location Permission Block છે!
+              </p>
+              <p style="margin-bottom: 8px;">લાઇવ લોકેશન ચાલુ કરવા માટે આ સ્ટેપ્સ ફોલો કરો:</p>
+              <ol style="padding-left: 20px; margin-bottom: 12px;">
+                <li style="margin-bottom: 5px;"><strong>Chrome બ્રાઉઝરમાં:</strong> ઉપર એડ્રેસ બારમાં URL ની ડાબી બાજુ આપેલા <strong>🔒 (Lock)</strong> અથવા <strong>Tune / Settings</strong> આઇકોન પર ટેપ કરો.</li>
+                <li style="margin-bottom: 5px;"><strong>Permissions:</strong> 'Permissions' માં જઈને <strong>Location</strong> ને <strong>'Allow' (ચાલુ)</strong> કરો.</li>
+                <li style="margin-bottom: 5px;"><strong>મોબાઇલ સેટિંગ્સ:</strong> તમારા ફોનનું <strong>GPS / Location</strong> ચાલુ (ON) કરો.</li>
+                <li><strong>Android Chrome App:</strong> Phone Settings &gt; Apps &gt; Chrome &gt; Permissions &gt; Location &gt; <em>"Allow while using the app"</em> કરો.</li>
+              </ol>
+              <p style="color: #64748b; font-size: 0.85rem; margin-top: 8px;">પરમિશન Allow કર્યા પછી નીચે <strong>"Try Again"</strong> બટન દબાવો.</p>
+            </div>
+          `,
+          confirmButtonColor: '#4f46e5',
+          confirmButtonText: '<i class="fa-solid fa-rotate-right"></i> Try Again / ફરી પ્રયાસ કરો',
+          showCancelButton: true,
+          cancelButtonText: 'Cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            requestStudentLocation();
+          }
+        });
+      } else {
+        alert('Location access denied. Please enable device location permission in your browser/device settings.');
+      }
+      showToast('Location access denied. Please enable device location permission.', 'error');
+    } else if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
+      // Automatic fallback to standard accuracy if high accuracy timed out
+      console.warn('High accuracy location timed out/unavailable. Attempting standard accuracy fallback...');
+      showLoader(true);
+      if (btnVerifyLocation) btnVerifyLocation.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        onLocationSuccess,
+        (fallbackErr) => {
+          showLoader(false);
+          if (btnVerifyLocation) btnVerifyLocation.disabled = false;
+          let fallbackMsg = 'Failed to retrieve location.';
+          if (fallbackErr.code === fallbackErr.TIMEOUT) {
+            fallbackMsg = 'Location request timed out. Please turn on device GPS and retry.';
+          } else if (fallbackErr.code === fallbackErr.POSITION_UNAVAILABLE) {
+            fallbackMsg = 'Location information is unavailable on your device.';
+          }
+          showToast(fallbackMsg, 'error');
+        },
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }
+      );
+    } else {
+      showToast('Failed to retrieve location.', 'error');
+    }
+  };
+
+  // Try high accuracy first (10s timeout)
+  navigator.geolocation.getCurrentPosition(
+    onLocationSuccess,
+    onLocationError,
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+if (btnVerifyLocation) {
+  btnVerifyLocation.addEventListener('click', requestStudentLocation);
 }
 
 if (btnSubmitLocation) {
@@ -671,7 +754,7 @@ if (btnSubmitLocation) {
           cancelButtonText: 'Cancel'
         }).then((result) => {
           if (result.isConfirmed) {
-            if (btnVerifyLocation) btnVerifyLocation.click();
+            requestStudentLocation();
           }
         });
       } else {
