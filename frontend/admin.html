@@ -18,7 +18,7 @@
   <meta http-equiv="Expires" content="0">
 
   <!-- CSS Styles -->
-  <link rel="stylesheet" href="css/style.css?v=3.2">
+  <link rel="stylesheet" href="css/style.css?v=3.3">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -176,17 +176,14 @@
       </ul>
 
       <div class="sidebar-footer" style="margin-top: auto; display: flex; flex-direction: column; gap: 0.45rem;">
-        <!-- Admin Profile right above Settings -->
-        <div class="sidebar-user-card" id="sidebarAdminBadge" title="Admin Settings">
+        <!-- Admin Profile -->
+        <div class="sidebar-user-card" id="sidebarAdminBadge" title="Admin Profile">
           <div class="user-avatar" id="adminAvatar" style="background: var(--info);">L</div>
           <div class="sidebar-user-details">
             <span id="adminProfileName" style="font-weight: 600;">Library Admin</span>
             <span class="user-role-tag">Administrator</span>
           </div>
         </div>
-        <button class="btn btn-secondary" id="adminSettingsBtn" style="width: 100%; text-align: left; justify-content: flex-start;">
-          <i class="fa-solid fa-gears"></i> Settings
-        </button>
         <button class="btn btn-secondary" id="adminLogoutBtn" style="width: 100%; text-align: left; justify-content: flex-start; color: var(--danger);">
           <i class="fa-solid fa-right-from-bracket"></i> Logout
         </button>
@@ -780,7 +777,7 @@
   <script src="/socket.io/socket.io.js"></script>
   
   <!-- Client-side Admin JavaScript -->
-  <script src="js/admin.js?v=3.2"></script>
+  <script src="js/admin.js?v=3.3"></script>
 
   <!-- PWA Service Worker -->
   <script>
