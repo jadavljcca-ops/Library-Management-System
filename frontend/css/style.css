@@ -102,6 +102,8 @@ a:hover {
   width: 220px;
   height: 100vh;
   max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   position: sticky;
   top: 0;
   left: 0;
@@ -1297,6 +1299,8 @@ tr:hover td {
     max-width: 78vw;
     height: 100vh;
     max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     background-color: var(--sidebar-bg);
     border-right: 1px solid var(--card-border);
     border-bottom: none;
@@ -1304,8 +1308,9 @@ tr:hover td {
     transform: translateX(-105%);
     transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1150;
-    padding: 1.5rem 1.25rem;
-    overflow-y: auto;
+    padding: 1.25rem 0.85rem calc(4rem + env(safe-area-inset-bottom, 25px)) 0.85rem !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
   }
@@ -1363,16 +1368,25 @@ tr:hover td {
   
   /* Mobile Header */
   header {
-    height: 62px !important;
-    padding: 0 1rem !important;
+    min-height: 60px !important;
+    height: auto !important;
+    padding: 0.6rem 1rem !important;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 0;
   }
 
   .header-left h1 {
-    font-size: 1.15rem !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 175px;
+    font-size: 1.18rem !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: 100% !important;
+    line-height: 1.25 !important;
+    word-break: normal !important;
+    margin: 0 !important;
   }
 
   .header-right {
@@ -1560,8 +1574,12 @@ tr:hover td {
 /* Extra Small Mobile Devices (<= 480px) */
 @media (max-width: 480px) {
   .header-left h1 {
-    font-size: 1rem !important;
-    max-width: 130px !important;
+    font-size: 1.05rem !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: 100% !important;
+    line-height: 1.25 !important;
   }
 
   .live-clock-card span {
