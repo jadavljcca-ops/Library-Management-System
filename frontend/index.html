@@ -296,67 +296,41 @@
   <!-- CONTACT & INQUIRY SECTION -->
   <!-- ========================================================== -->
   <section class="contact" id="contact">
-    <div class="container">
-      <div class="contact-grid">
-        <div class="contact-info">
-          <h2>Get in Touch</h2>
-          <p>Have questions about integrating the Smart Library system at your campus? Contact our administrative team
-            for a product demonstration or assistance.</p>
+    <div class="container" style="max-width: 960px;">
+      <div class="contact-header" style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem;">Get in Touch</h2>
+        <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto;">Have questions about integrating the Smart Library system at your campus? Contact our administrative team for assistance.</p>
+      </div>
 
-          <div class="contact-details">
-            <div class="contact-detail-item">
-              <div class="contact-detail-icon">
-                <i class="fa-solid fa-envelope"></i>
-              </div>
-              <div class="contact-detail-content">
-                <h4>General Support</h4>
-                <p>support@college.edu</p>
-              </div>
-            </div>
-
-            <div class="contact-detail-item">
-              <div class="contact-detail-icon">
-                <i class="fa-solid fa-phone"></i>
-              </div>
-              <div class="contact-detail-content">
-                <h4>College Helpline</h4>
-                <p>+1 (555) 123-4567</p>
-              </div>
-            </div>
-
-            <div class="contact-detail-item">
-              <div class="contact-detail-icon">
-                <i class="fa-solid fa-location-dot"></i>
-              </div>
-              <div class="contact-detail-content">
-                <h4>Main Campus</h4>
-                <p>Central Block, University Campus, Floor 2</p>
-              </div>
-            </div>
+      <div class="contact-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; text-align: left;">
+        <div class="contact-card-box" style="background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); border-radius: 18px; padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;">
+          <div class="contact-detail-icon">
+            <i class="fa-solid fa-envelope"></i>
+          </div>
+          <div class="contact-detail-content">
+            <h4>General Support</h4>
+            <p>support@college.edu</p>
           </div>
         </div>
 
-        <div class="contact-form-card">
-          <form id="contactForm">
-            <div class="form-group">
-              <label for="contactName">Your Name</label>
-              <input type="text" id="contactName" class="form-control" placeholder="e.g. John Doe" required>
-            </div>
+        <div class="contact-card-box" style="background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); border-radius: 18px; padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;">
+          <div class="contact-detail-icon">
+            <i class="fa-solid fa-phone"></i>
+          </div>
+          <div class="contact-detail-content">
+            <h4>College Helpline</h4>
+            <p>+1 (555) 123-4567</p>
+          </div>
+        </div>
 
-            <div class="form-group">
-              <label for="contactEmail">Your Email</label>
-              <input type="email" id="contactEmail" class="form-control" placeholder="e.g. email@college.edu" required>
-            </div>
-
-            <div class="form-group">
-              <label for="contactMessage">Message / Inquiry</label>
-              <textarea id="contactMessage" class="form-control" placeholder="How can we help you?" required></textarea>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
-              <i class="fa-solid fa-paper-plane"></i> Send Message
-            </button>
-          </form>
+        <div class="contact-card-box" style="background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); border-radius: 18px; padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;">
+          <div class="contact-detail-icon">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <div class="contact-detail-content">
+            <h4>Main Campus</h4>
+            <p>Central Block, Campus Floor 2</p>
+          </div>
         </div>
       </div>
     </div>
