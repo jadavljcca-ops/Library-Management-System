@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Resetting Cache...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .card {
+      background: #1e293b;
+      padding: 30px 25px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-width: 420px;
+      width: 100%;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255,255,255,0.1);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h2 { margin: 0 0 10px; font-size: 1.4rem; }
+    p { color: #94a3b8; font-size: 0.95rem; line-height: 1.5; margin: 0 0 20px; }
+    .status {
+      font-size: 0.85rem;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      box-sizing: border-box;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner" id="spinner"></div>
+    <h2 id="title">Cleaning Cache Memory...</h2>
+    <p id="desc">Clearing all saved phone caches, service workers, and temporary files so you get the latest version.</p>
+    <div class="status" id="log">Initializing cleanup...</div>
+    <button class="btn" id="actionBtn" style="display:none;" onclick="redirectToHome()">Go to App Now</button>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const titleEl = document.getElementById('title');
+    const descEl = document.getElementById('desc');
+    const spinnerEl = document.getElementById('spinner');
+    const actionBtn = document.getElementById('actionBtn');
+
+    function updateLog(msg) {
+      logEl.innerHTML += '<br>• ' + msg;
+    }
+
+    async function clearAllData() {
+      try {
+        // 1. Unregister all service workers
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let reg of registrations) {
+            await reg.unregister();
+          }
+          updateLog('Service Workers removed (' + registrations.length + ')');
+        }
+
+        // 2. Delete all caches in CacheStorage
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          for (let key of keys) {
+            await caches.delete(key);
+          }
+          updateLog('Cache Storage cleared (' + keys.length + ' caches deleted)');
+        }
+
+        // 3. Clear sessionStorage
+        sessionStorage.clear();
+        updateLog('Session storage cleared');
+
+        // 4. Finished
+        updateLog('✅ Done! Cache completely cleared.');
+        titleEl.innerText = 'Cache Cleaned Successfully!';
+        descEl.innerText = 'All old files have been removed from your phone. You will now see the latest version.';
+        spinnerEl.style.display = 'none';
+        actionBtn.style.display = 'block';
+
+        setTimeout(() => {
+          redirectToHome();
+        }, 1800);
+      } catch (err) {
+        console.error(err);
+        updateLog('Error during cleanup: ' + err.message);
+        actionBtn.style.display = 'block';
+      }
+    }
+
+    function redirectToHome() {
+      // Force reload with cache-busting timestamp
+      window.location.replace('/index.html?t=' + Date.now());
+    }
+
+    clearAllData();
+  </script>
+</body>
+</html>
