@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node --watch backend/server.js",
-    "build": "echo 'No build step required for vanilla JS project'"
+    "build": "node -e \"const fs = require('fs'); fs.cpSync('frontend', 'public', { recursive: true }); console.log('Static build ready in public directory');\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

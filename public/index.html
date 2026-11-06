@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Smart Library QR Entry Management System</title>
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <link rel="apple-touch-icon" href="logo.jpg">
+  <meta name="theme-color" content="#4a90e2">
+
+  <!-- CSS Styles -->
+  <!-- Anti-Cache Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="css/landing.css?v=3.5">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+  <!-- ========================================================== -->
+  <!-- NAVIGATION HEADER -->
+  <!-- ========================================================== -->
+  <header class="navbar">
+    <div class="container">
+      <div class="brand-section">
+        <div class="brand-logo" style="width: 40px; height: 40px; padding: 2px;">
+          <img src="logo.jpg" alt="SmartLib Logo" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <span class="brand-name">SmartLib <span class="gradient-text">QR</span></span>
+      </div>
+
+      <ul class="nav-menu">
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#stats" class="nav-link">Statistics</a></li>
+        <li><a href="#faq" class="nav-link">FAQs</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn btn-primary nav-btn-desktop" id="pwaInstallBtn" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 10px; display: flex; align-items: center; gap: 0.5rem;" title="Install App">
+          <i class="fa-solid fa-download"></i> Install App
+        </button>
+        <a href="student.html" class="btn btn-primary nav-btn-desktop"
+          style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 10px;">
+          <i class="fa-solid fa-right-to-bracket"></i> Login
+        </a>
+        <button class="theme-toggle-btn mobile-toggle" id="mobileToggle" title="Open Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================== -->
+  <!-- MOBILE MENU DRAWER -->
+  <!-- ========================================================== -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <div class="brand-section">
+          <div class="brand-logo" style="width: 36px; height: 36px; padding: 2px; border-radius: 10px;">
+            <img src="logo.jpg" alt="SmartLib Logo" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <span class="brand-name" style="font-size: 1.15rem;">SmartLib <span class="gradient-text">QR</span></span>
+        </div>
+        <button class="theme-toggle-btn" id="drawerClose" title="Close Menu">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <ul class="drawer-menu">
+        <li><a href="#features" class="drawer-link">Features</a></li>
+        <li><a href="#stats" class="drawer-link">Statistics</a></li>
+        <li><a href="#faq" class="drawer-link">FAQs</a></li>
+        <li><a href="#contact" class="drawer-link">Contact</a></li>
+        </ul>
+        <div class="drawer-actions">
+          <button class="btn btn-primary" id="pwaInstallBtnMobile" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+            <i class="fa-solid fa-download"></i> Install App
+          </button>
+          <a href="student.html" class="btn btn-primary" style="width: 100%; text-align: center; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-right-to-bracket"></i> Login
+          </a>
+        </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- HERO SECTION -->
+  <!-- ========================================================== -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <h1>Next-Gen <span class="gradient-text">QR Check-In</span> for Modern Libraries</h1>
+          <p>Contactless check-ins, automated geofencing verification, and real-time live occupancy data. A secure and
+            paperless solution for campus students and library administrators.</p>
+          <div class="hero-ctas">
+            <a href="student.html" class="btn btn-primary">
+              <i class="fa-solid fa-rocket"></i> Get Started
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-mockup">
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-dots">
+                <span class="mockup-dot"></span>
+                <span class="mockup-dot"></span>
+                <span class="mockup-dot"></span>
+              </div>
+              <div class="mockup-title">Smart Scanner View</div>
+            </div>
+
+            <div class="mockup-screen">
+              <div class="mockup-qr">
+                <!-- Logo Graphic -->
+                <img src="logo.jpg" alt="SmartLib App Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                <div class="mockup-laser"></div>
+              </div>
+              <div class="mockup-status-badge">
+                <span class="mockup-status-dot"></span>
+                <span>SYSTEM STATUS: ACTIVE & ONLINE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- KEY FEATURES SECTION -->
+  <!-- ========================================================== -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Smart System Features</h2>
+        <p>Optimizing attendance records and access security with modern web architecture.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-qrcode"></i>
+          </div>
+          <h3>Contactless QR Checks</h3>
+          <p>Scan a single QR code from your smartphone camera to check-in or check-out of the library instantly.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-location-crosshairs"></i>
+          </div>
+          <h3>Geofencing Verification</h3>
+          <p>Restricts student scans outside college premises. GPS coordinates are validated locally before unlocking
+            scanning functionality.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <h3>Real-Time Admin Logs</h3>
+          <p>Features live websocket notifications. Entry updates show up in the admin control center as they happen.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-moon"></i>
+          </div>
+          <h3>Synchronized Themes</h3>
+          <p>Supports light and dark color schemes, saving user preferences automatically across all portal pages.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3>Security & Encryption</h3>
+          <p>Integrates secure JSON Web Tokens (JWT) for student sessions and hashes passwords with industry-standard
+            bcrypt encryption.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-file-csv"></i>
+          </div>
+          <h3>Data Export & Reports</h3>
+          <p>Admins can download student lists, active sessions, and attendance history logs to standard Excel CSV
+            files.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- PLATFORM STATISTICS SECTION -->
+  <!-- ========================================================== -->
+  <section class="stats" id="stats">
+    <div class="container">
+      <div class="stats-container">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number" data-target="5000" data-suffix="+">0</span>
+            <span class="stat-label">Registered Students</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="15000" data-suffix="+">0</span>
+            <span class="stat-label">Managed Entry Visits</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="0" data-suffix="s">0s</span>
+            <span class="stat-label">Check-In Waiting Time</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="100" data-suffix="%" data-prefix="~">0</span>
+            <span class="stat-label">Cloud Up-time Guarantee</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- FAQ ACCORDION SECTION -->
+  <!-- ========================================================== -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <h2>Frequently Asked Questions</h2>
+        <p>Everything you need to know about the QR attendance and verification system.</p>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How do I check in to the library?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Simply navigate to the Student Portal, login using your enrollment number or registered email, click
+              'Share Live Location' to verify you are at the library, and then point your camera to scan the library QR
+              code.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Why is sharing my location mandatory?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>To maintain campus integrity and prevent student login entries from off-campus. The application verifies
+              your browser's geocoordinates to confirm you are in proximity to the library building.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does checking out work?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>The system uses the same procedure. Scanning the library QR code while you have an active check-in
+              session will automatically log your checkout time and compute your total session duration.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is the portal accessible on mobile devices?</span>
+            <i class="fa-solid fa-chevron-down faq-icon"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes, the landing page, student dashboard, and admin control panels are designed to be fully responsive.
+              Students can scan QR codes using their mobile browsers without installing any native apps.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- CONTACT & INQUIRY SECTION -->
+  <!-- ========================================================== -->
+  <section class="contact" id="contact">
+    <div class="container" style="max-width: 960px;">
+      <div class="contact-header" style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem;">Get in Touch</h2>
+        <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto;">Have questions about integrating the Smart Library system at your campus? Contact our administrative team for assistance.</p>
+      </div>
+
+      <div class="contact-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; text-align: left;">
+        <div class="contact-card-box" style="background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); border-radius: 18px; padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;">
+          <div class="contact-detail-icon">
+            <i class="fa-solid fa-envelope"></i>
+          </div>
+          <div class="contact-detail-content">
+            <h4>General Support</h4>
+            <p>support@college.edu</p>
+          </div>
+        </div>
+
+        <div class="contact-card-box" style="background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); border-radius: 18px; padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;">
+          <div class="contact-detail-icon">
+            <i class="fa-solid fa-phone"></i>
+          </div>
+          <div class="contact-detail-content">
+            <h4>College Helpline</h4>
+            <p>+1 (555) 123-4567</p>
+          </div>
+        </div>
+
+        <div class="contact-card-box" style="background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); border-radius: 18px; padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;">
+          <div class="contact-detail-icon">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <div class="contact-detail-content">
+            <h4>Main Campus</h4>
+            <p>Central Block, Campus Floor 2</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- FOOTER -->
+  <!-- ========================================================== -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-section" style="margin-bottom: 0.5rem;">
+            <div class="brand-logo" style="width: 32px; height: 32px; font-size: 1rem; border-radius: 8px;">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <span class="brand-name" style="font-size: 1.1rem;">SmartLib <span class="gradient-text">QR</span></span>
+          </div>
+          <p>A contactless, modern, geofenced QR Code registration system designed for modern campus libraries.</p>
+        </div>
+
+        <div class="footer-links">
+          <h4>Quick Access</h4>
+          <ul>
+            <li><a href="student.html"><i class="fa-solid fa-right-to-bracket"></i> Login to Portal</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Platform Navigation</h4>
+          <ul>
+            <li><a href="#features">Key Features</a></li>
+            <li><a href="#stats">System Statistics</a></li>
+            <li><a href="#faq">Frequently Asked Questions</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom" style="justify-content: center; text-align: center;">
+        <div style="text-align: center; width: 100%;">
+          <p style="font-weight: 600; margin-bottom: 6px; font-size: 1rem;">&copy; 2026 Smart Library Entry & Exit System.</p>
+          <p style="font-size: 0.95rem; color: var(--text-muted, #94a3b8); margin: 0; line-height: 1.6;">This Module is Build, Designed, and Devloped by <span style="color: var(--primary, #6366f1); font-weight: 700;">Jadav Dashrath</span>, <span style="color: var(--primary, #6366f1); font-weight: 700;">Dabhi Prit</span>, and <span style="color: var(--primary, #6366f1); font-weight: 700;">Chachcha Madhav</span></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="pwaInstallBtnPlaceholder" style="display: none;"></div>
+
+  <!-- PWA Installation Script -->
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        for (let key of keys) {
+          caches.delete(key);
+        }
+      });
+    }
+
+    // PWA Install Prompt Logic
+    let deferredPrompt;
+    const installBtn = document.getElementById('pwaInstallBtn');
+    const installBtnMobile = document.getElementById('pwaInstallBtnMobile');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    const handleInstallClick = async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        deferredPrompt = null;
+      } else {
+        alert("App installation is not available right now.\n\nPossible reasons:\n1. The app is already installed.\n2. You are opening the file directly instead of using a local server (like http://localhost:5000).\n3. Your browser doesn't support PWA.");
+      }
+    };
+
+    if(installBtn) installBtn.addEventListener('click', handleInstallClick);
+    if(installBtnMobile) installBtnMobile.addEventListener('click', handleInstallClick);
+
+    window.addEventListener('appinstalled', () => {
+      if(installBtn) {
+        installBtn.innerHTML = '<i class="fa-solid fa-check"></i> Installed';
+        installBtn.style.background = '#28a745';
+        setTimeout(() => { installBtn.style.display = 'none'; }, 3000);
+      }
+      if(installBtnMobile) {
+        installBtnMobile.innerHTML = '<i class="fa-solid fa-check"></i> Installed';
+        installBtnMobile.style.background = '#28a745';
+        setTimeout(() => { installBtnMobile.style.display = 'none'; }, 3000);
+      }
+    });
+  </script>
+
+  <!-- External Scripts -->
+  <script src="js/landing.js?v=3.5"></script>
+</body>
+
+</html>

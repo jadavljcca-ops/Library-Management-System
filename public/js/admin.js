@@ -1,0 +1,2400 @@
+// admin.js
+// Admin Dashboard Frontend Client Logic
+
+// Configuration
+// If your backend is hosted online (e.g. Render / Railway), enter its URL below:
+const BACKEND_URL = '';
+
+function getApiBaseUrl() {
+  if (BACKEND_URL) return BACKEND_URL.replace(/\/$/, '');
+  const hostname = window.location.hostname;
+  const isLocal = hostname === 'localhost' || 
+                  hostname === '127.0.0.1' || 
+                  hostname === '[::1]' ||
+                  /^192\.168\./.test(hostname) || 
+                  /^10\./.test(hostname) || 
+                  /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname);
+  if (isLocal) {
+    return window.location.port === '5000' ? '' : `http://${hostname}:5000`;
+  }
+  if (window.location.protocol === 'file:') {
+    return 'http://localhost:5000';
+  }
+  return '';
+}
+
+const API_URL = getApiBaseUrl();
+
+// State
+let token = localStorage.getItem('admin_token') || null;
+let currentUser = null;
+let socket = null;
+
+// Table Pagination State
+let allRecords = [];
+let currentPage = 1;
+const rowsPerPage = 10;
+
+// Chart Instances
+let hourlyChartInstance = null;
+let departmentChartInstance = null;
+
+// DOM Elements
+const adminAuthContainer = document.getElementById('adminAuthContainer');
+const adminDashboardContainer = document.getElementById('adminDashboardContainer');
+const adminLoginForm = document.getElementById('adminLoginForm');
+
+// Navigation Links
+const menuDashBtn = document.getElementById('menuDashBtn');
+const menuReportsBtn = document.getElementById('menuReportsBtn');
+const menuStudentsBtn = document.getElementById('menuStudentsBtn');
+const pageTitle = document.getElementById('pageTitle');
+const sectionDashboard = document.getElementById('sectionDashboard');
+const sectionReports = document.getElementById('sectionReports');
+const sectionStudents = document.getElementById('sectionStudents');
+const menuQrCodeBtn = document.getElementById('menuQrCodeBtn');
+const sectionQrCode = document.getElementById('sectionQrCode');
+
+const adminSettingsBtn = document.getElementById('adminSettingsBtn');
+const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+
+// Import / File Upload Elements
+const importDragArea = document.getElementById('importDragArea');
+const studentsImportFile = document.getElementById('studentsImportFile');
+const importFileStatus = document.getElementById('importFileStatus');
+const importFileName = document.getElementById('importFileName');
+const importFileSize = document.getElementById('importFileSize');
+const btnCancelImport = document.getElementById('btnCancelImport');
+const btnDownloadTemplate = document.getElementById('btnDownloadTemplate');
+const btnLoadDemoData = document.getElementById('btnLoadDemoData');
+const btnSubmitImport = document.getElementById('btnSubmitImport');
+
+// Students DB Table Elements
+const studentsDbSearchInput = document.getElementById('studentsDbSearchInput');
+const studentsDbTableBody = document.getElementById('studentsDbTableBody');
+const studentsDbPageInfo = document.getElementById('studentsDbPageInfo');
+const btnStudentsDbPrevPage = document.getElementById('btnStudentsDbPrevPage');
+const btnStudentsDbNextPage = document.getElementById('btnStudentsDbNextPage');
+
+let allStudentsDb = [];
+let filteredStudentsDb = [];
+let currentStudentsPage = 1;
+const studentsRowsPerPage = 10;
+let importFilePending = null;
+let previewStudentsList = [];
+
+// Preview Card DOM Elements
+const importPreviewCard = document.getElementById('importPreviewCard');
+const previewTableBody = document.getElementById('previewTableBody');
+const btnPreviewAddRow = document.getElementById('btnPreviewAddRow');
+const btnPreviewCancel = document.getElementById('btnPreviewCancel');
+const btnPreviewConfirm = document.getElementById('btnPreviewConfirm');
+const previewCountText = document.getElementById('previewCountText');
+
+// Modals
+const adminSettingsModal = document.getElementById('adminSettingsModal');
+const closeAdminSettings = document.getElementById('closeAdminSettings');
+const cancelAdminSettings = document.getElementById('cancelAdminSettings');
+const adminChangePasswordForm = document.getElementById('adminChangePasswordForm');
+const adminProfileForm = document.getElementById('adminProfileForm');
+const adminProfileName = document.getElementById('adminProfileName');
+
+// Registered Students Modal & Cards
+const registeredStudentsModal = document.getElementById('registeredStudentsModal');
+const closeStudentsModal = document.getElementById('closeStudentsModal');
+const closeStudentsModalBtn = document.getElementById('closeStudentsModalBtn');
+const registeredStudentsTableBody = document.getElementById('registeredStudentsTableBody');
+const studentsSearchInput = document.getElementById('studentsSearchInput');
+const modalTotalStudentsCount = document.getElementById('modalTotalStudentsCount');
+
+const cardTotalStudents = document.getElementById('cardTotalStudents');
+const cardInsideLibrary = document.getElementById('cardInsideLibrary');
+const cardEntriesToday = document.getElementById('cardEntriesToday');
+const cardExitsToday = document.getElementById('cardExitsToday');
+
+let registeredStudentsList = [];
+
+// Themes
+const adminThemeToggle = document.getElementById('adminThemeToggle');
+
+// Stat Elements
+const statTotalStudents = document.getElementById('statTotalStudents');
+const statInsideLibrary = document.getElementById('statInsideLibrary');
+const statEntriesToday = document.getElementById('statEntriesToday');
+const statExitsToday = document.getElementById('statExitsToday');
+const realTimeAlertsList = document.getElementById('realTimeAlertsList');
+
+// Filters Form
+const filtersForm = document.getElementById('filtersForm');
+const btnResetFilters = document.getElementById('btnResetFilters');
+
+// Table Body
+const attendanceTableBody = document.getElementById('attendanceTableBody');
+const tablePageInfo = document.getElementById('tablePageInfo');
+const btnPrevPage = document.getElementById('btnPrevPage');
+const btnNextPage = document.getElementById('btnNextPage');
+
+// Quick Reports Filters (Daily/Weekly/Monthly)
+const btnDailyReport = document.getElementById('btnDailyReport');
+const btnWeeklyReport = document.getElementById('btnWeeklyReport');
+const btnMonthlyReport = document.getElementById('btnMonthlyReport');
+
+// Export Triggers
+const exportExcelBtn = document.getElementById('exportExcelBtn');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+
+// Loaders
+const adminLoader = document.getElementById('adminLoader');
+
+// ==========================================
+// FORCE LIGHT MODE (Theme switching disabled)
+// ==========================================
+function initTheme() {
+  // Always use light mode - theme switching is disabled
+  localStorage.removeItem('theme');
+  document.documentElement.setAttribute('data-theme', 'light');
+}
+
+// ==========================================
+// TOAST NOTIFICATIONS
+// ==========================================
+function showToast(message, type = 'info') {
+  const container = document.getElementById('adminToastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+
+  let icon = 'fa-circle-info';
+  if (type === 'success') icon = 'fa-circle-check';
+  if (type === 'error') icon = 'fa-circle-exclamation';
+
+  toast.innerHTML = `
+    <i class="fa-solid ${icon} toast-icon"></i>
+    <span>${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  // Auto remove
+  setTimeout(() => {
+    toast.style.animation = 'toastIn 0.3s reverse forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+function showLoader(show = true) {
+  if (show) {
+    adminLoader.classList.add('active');
+  } else {
+    adminLoader.classList.remove('active');
+  }
+}
+
+// Live Clock for Admin Dashboard
+function startClock() {
+  const clockEl = document.getElementById('adminLiveClock');
+  if (!clockEl) return;
+
+  setInterval(() => {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = String(hours).padStart(2, '0');
+
+    clockEl.textContent = `${hoursStr}:${minutes}:${seconds} ${ampm}`;
+  }, 1000);
+}
+
+// ==========================================
+// API CALLS & CHARTS INITIALIZATION
+// ==========================================
+async function fetchDashboardStats() {
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/admin/dashboard-stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      // Update key stats counts
+      statTotalStudents.textContent = data.stats.totalStudents;
+      statInsideLibrary.textContent = data.stats.insideCount;
+      statEntriesToday.textContent = data.stats.entriesToday;
+      statExitsToday.textContent = data.stats.exitsToday;
+
+      // Update Charts
+      updateHourlyChart(data.stats.hourlyTrend);
+      updateDepartmentChart(data.stats.departmentDistribution);
+    } else {
+      showToast(data.message || 'Failed to fetch dashboard statistics.', 'error');
+      if (res.status === 401 || res.status === 403) logout();
+    }
+  } catch (error) {
+    console.error('Fetch dashboard stats error:', error);
+    showToast('Failed to connect to stats API.', 'error');
+  }
+}
+
+// Draw/Update Hourly traffic line chart
+function updateHourlyChart(trendData) {
+  const ctx = document.getElementById('hourlyTrendChart').getContext('2d');
+
+  // Fill all 24 hours with 0 entries by default
+  const hourlyCounts = Array(24).fill(0);
+  trendData.forEach(item => {
+    if (item.hr >= 0 && item.hr < 24) {
+      hourlyCounts[item.hr] = item.count;
+    }
+  });
+
+  const labels = Array.from({ length: 24 }, (_, i) => {
+    const hr = i % 12 || 12;
+    const ampm = i >= 12 ? 'PM' : 'AM';
+    return `${hr} ${ampm}`;
+  });
+
+  const chartColors = getChartColorPalette();
+
+  if (hourlyChartInstance) {
+    hourlyChartInstance.data.datasets[0].data = hourlyCounts;
+    hourlyChartInstance.options.scales.x.grid.color = chartColors.gridColor;
+    hourlyChartInstance.options.scales.y.grid.color = chartColors.gridColor;
+    hourlyChartInstance.options.scales.x.ticks.color = chartColors.textColor;
+    hourlyChartInstance.options.scales.y.ticks.color = chartColors.textColor;
+    hourlyChartInstance.update();
+  } else {
+    hourlyChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Total Scanned Entries',
+          data: hourlyCounts,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.15)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: '#6366f1',
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, color: chartColors.textColor },
+            grid: { color: chartColors.gridColor }
+          },
+          x: {
+            ticks: { color: chartColors.textColor },
+            grid: { color: chartColors.gridColor }
+          }
+        }
+      }
+    });
+  }
+}
+
+// Draw/Update Department pie distribution
+function updateDepartmentChart(deptData) {
+  const canvas = document.getElementById('departmentChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const labels = deptData.map(item => item.department || 'Unknown');
+  const counts = deptData.map(item => item.count);
+
+  const colors = [
+    '#6366f1', '#10b981', '#06b6d4', '#f59e0b',
+    '#ec4899', '#8b5cf6', '#3b82f6', '#14b8a6'
+  ];
+
+  const chartColors = getChartColorPalette();
+
+  if (departmentChartInstance) {
+    departmentChartInstance.data.labels = labels;
+    departmentChartInstance.data.datasets[0].data = counts;
+    departmentChartInstance.options.plugins.legend.labels.color = chartColors.textColor;
+    departmentChartInstance.update();
+  } else {
+    departmentChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: colors.slice(0, Math.max(1, labels.length)),
+          borderWidth: 2,
+          borderColor: 'var(--card-bg)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              boxWidth: 12,
+              font: { family: 'Outfit', size: 12 },
+              color: chartColors.textColor
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+// Dynamic chart fonts adjusting with light/dark theme switch
+function getChartColorPalette() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    textColor: isDark ? '#94a3b8' : '#64748b',
+    gridColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'
+  };
+}
+
+// Fetch report logs with filters
+async function fetchAttendanceRecords(filters = {}) {
+  if (!token) {
+    logout();
+    return;
+  }
+
+  showLoader(true);
+  const cleanFilters = {};
+  if (filters && typeof filters === 'object') {
+    Object.keys(filters).forEach(k => {
+      const v = filters[k];
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        cleanFilters[k] = String(v).trim();
+      }
+    });
+  }
+  const urlParams = new URLSearchParams(cleanFilters);
+
+  try {
+    const res = await fetch(`${API_URL}/api/admin/attendance-records?${urlParams.toString()}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      allRecords = Array.isArray(data.records) ? data.records : [];
+      currentPage = 1;
+      renderTable();
+    } else {
+      showToast(data.message || 'Failed to download reports.', 'error');
+      if (res.status === 401 || res.status === 403) {
+        logout();
+      }
+    }
+  } catch (error) {
+    console.error('Fetch attendance records error:', error);
+    showToast('Failed to connect to report database.', 'error');
+  } finally {
+    showLoader(false);
+  }
+}
+
+// Date and Time Formatting Helpers (DD/MM/YYYY and Real Time Display)
+function formatDateDDMMYYYY(dateStr) {
+  if (!dateStr || dateStr === '-' || dateStr === 'null' || dateStr === 'undefined') return '-';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const parts = String(dateStr).split('T')[0].split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    const [year, month, day] = parts;
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  }
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+}
+
+function formatTimeDisplay(timeStr) {
+  if (!timeStr || timeStr === '-' || timeStr === 'null' || timeStr === 'undefined') return '-';
+  if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+    return timeStr;
+  }
+  const parts = String(timeStr).split(':');
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    const seconds = parts[2] ? parts[2].substring(0, 2) : '';
+    if (isNaN(hours)) return timeStr;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    const h12Str = String(h12).padStart(2, '0');
+    return seconds ? `${h12Str}:${minutes}:${seconds} ${ampm}` : `${h12Str}:${minutes} ${ampm}`;
+  }
+  return timeStr;
+}
+
+function formatDistanceDisplay(meters) {
+  if (meters === null || meters === undefined || meters === '') return '-';
+  const num = parseFloat(meters);
+  if (isNaN(num)) return '-';
+  if (num <= 10) return '0 m (Inside)';
+  if (num < 1000) return `${Math.round(num)} m`;
+  return `${(num / 1000).toFixed(2)} km`;
+}
+
+// Render paginated records
+function renderTable() {
+  attendanceTableBody.innerHTML = '';
+
+  if (allRecords.length === 0) {
+    attendanceTableBody.innerHTML = `
+      <tr>
+        <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+          No matching attendance sessions found.
+        </td>
+      </tr>
+    `;
+    tablePageInfo.textContent = 'Showing 0 to 0 of 0 entries';
+    btnPrevPage.disabled = true;
+    btnNextPage.disabled = true;
+    return;
+  }
+
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, allRecords.length);
+  const paginatedData = allRecords.slice(startIndex, endIndex);
+
+  paginatedData.forEach(row => {
+    const tr = document.createElement('tr');
+
+    // Status Badge
+    const isInside = row.status === 'Inside';
+    const statusClass = isInside ? 'badge-success' : 'badge-info';
+    const statusText = isInside ? 'Inside' : 'Exited';
+
+    tr.innerHTML = `
+      <td><strong>${formatDateDDMMYYYY(row.entry_date)}</strong></td>
+      <td>${row.name}</td>
+      <td><code>${row.enrollment_no}</code></td>
+      <td>${row.department}</td>
+      <td>${row.course} <span style="color: var(--text-muted); font-size: 0.8rem;">(${row.semester})</span></td>
+      <td>${formatTimeDisplay(row.entry_time)}</td>
+      <td><span title="${row.entry_latitude || ''}, ${row.entry_longitude || ''}">${row.entry_location_name || '-'}</span></td>
+      <td><strong>${formatDistanceDisplay(row.distance_meters)}</strong></td>
+      <td>${formatDateDDMMYYYY(row.exit_date)}</td>
+      <td>${formatTimeDisplay(row.exit_time)}</td>
+      <td>${row.duration || '-'}</td>
+      <td>
+        <span class="badge ${statusClass}">
+          <span class="badge-dot"></span> ${statusText}
+        </span>
+      </td>
+      <td style="text-align: center;">
+        <button class="btn btn-sm btn-danger btn-delete-attendance" data-id="${row.id}" style="padding: 4px 10px; font-size: 0.8rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Delete Attendance Log">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+      </td>
+    `;
+    attendanceTableBody.appendChild(tr);
+  });
+
+  tablePageInfo.textContent = `Showing ${startIndex + 1} to ${endIndex} of ${allRecords.length} entries`;
+
+  // Control buttons disabled status
+  btnPrevPage.disabled = currentPage === 1;
+  btnNextPage.disabled = endIndex >= allRecords.length;
+
+  // Add click handlers for delete attendance buttons
+  document.querySelectorAll('.btn-delete-attendance').forEach(button => {
+    button.addEventListener('click', async () => {
+      const id = button.getAttribute('data-id');
+      const row = button.closest('tr');
+      const studentName = row ? row.querySelectorAll('td')[1]?.textContent || 'this student' : 'this record';
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Delete Attendance Record?',
+          text: `Are you sure you want to delete the attendance log for ${studentName}?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: 'Yes, delete it!'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            await deleteAttendanceRecord(id);
+          }
+        });
+      } else if (confirm(`Delete attendance record for ${studentName}?`)) {
+        await deleteAttendanceRecord(id);
+      }
+    });
+  });
+}
+
+// Pagination Event Listeners
+btnPrevPage.addEventListener('click', () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderTable();
+  }
+});
+
+btnNextPage.addEventListener('click', () => {
+  if ((currentPage * rowsPerPage) < allRecords.length) {
+    currentPage++;
+    renderTable();
+  }
+});
+
+// Delete Single Attendance Record
+async function deleteAttendanceRecord(id) {
+  if (!token) return;
+  showLoader(true);
+  try {
+    const res = await fetch(`${API_URL}/api/admin/attendance/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(data.message || 'Attendance log deleted successfully.', 'success');
+      await fetchAttendanceRecords(getFilterValues());
+      await fetchDashboardStats();
+    } else {
+      showToast(data.message || 'Failed to delete record.', 'error');
+    }
+  } catch (error) {
+    console.error('Delete attendance error:', error);
+    showToast('Failed to delete attendance record.', 'error');
+  } finally {
+    showLoader(false);
+  }
+}
+
+// Clear All Attendance Records
+async function clearAllAttendance() {
+  if (!token) return;
+  const doClear = async () => {
+    showLoader(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/attendance`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || 'All attendance records deleted.', 'success');
+        await fetchAttendanceRecords(getFilterValues());
+        await fetchDashboardStats();
+      } else {
+        showToast(data.message || 'Failed to clear records.', 'error');
+      }
+    } catch (error) {
+      console.error('Clear attendance error:', error);
+      showToast('Failed to clear attendance records.', 'error');
+    } finally {
+      showLoader(false);
+    }
+  };
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Clear All Attendance Records?',
+      text: 'Are you sure you want to permanently delete ALL attendance logs? This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, clear all!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        doClear();
+      }
+    });
+  } else if (confirm('Are you sure you want to permanently delete ALL attendance records?')) {
+    doClear();
+  }
+}
+
+const btnClearAttendanceBtn = document.getElementById('btnClearAttendanceBtn');
+if (btnClearAttendanceBtn) {
+  btnClearAttendanceBtn.addEventListener('click', clearAllAttendance);
+}
+
+// ==========================================
+// REAL-TIME WEBSOCKET INTEGRATION
+// ==========================================
+function initSocket() {
+  if (typeof io === 'undefined') return;
+
+  socket = io(API_URL);
+
+  socket.on('connect', () => {
+    console.log('Socket client active. Subscribing admin token channel.');
+    socket.emit('register-admin');
+  });
+
+  // Handle entry logs broadcasted from backend
+  socket.on('student-entry', (record) => {
+    // 1. Add alert to Live Activity panel
+    addLiveAlert(record, 'entry');
+
+    // 2. Update stats charts
+    fetchDashboardStats();
+
+    // 3. Append row to records if active
+    if (sectionReports.style.display === 'block') {
+      fetchAttendanceRecords(getFilterValues());
+    }
+  });
+
+  // Handle exit logs broadcasted from backend
+  socket.on('student-exit', (record) => {
+    // 1. Add alert to Live Activity panel
+    addLiveAlert(record, 'exit');
+
+    // 2. Update stats charts
+    fetchDashboardStats();
+
+    // 3. Append row to records if active
+    if (sectionReports.style.display === 'block') {
+      fetchAttendanceRecords(getFilterValues());
+    }
+  });
+}
+
+function addLiveAlert(record, type) {
+  if (!realTimeAlertsList) return;
+  // Clear "no records" text first
+  if (realTimeAlertsList.children.length === 1 && realTimeAlertsList.children[0].textContent.includes('No live scans')) {
+    realTimeAlertsList.innerHTML = '';
+  }
+
+  const li = document.createElement('li');
+  li.className = `alert-item ${type}`;
+
+  const time = type === 'entry' ? record.entry_time : record.exit_time;
+  const icon = type === 'entry' ? 'fa-right-to-bracket' : 'fa-right-from-bracket';
+  const actionText = type === 'entry' ? 'Entered' : 'Exited';
+  const durationText = type === 'exit' ? ` (Duration: ${record.duration})` : '';
+
+  li.innerHTML = `
+    <i class="fa-solid ${icon} alert-icon"></i>
+    <div class="alert-content">
+      <strong>${record.name}</strong> <code>${record.enrollment_no}</code> ${actionText} the library${durationText}.
+      <div class="alert-time">${formatDateDDMMYYYY(record.entry_date)} @ ${formatTimeDisplay(time)}</div>
+    </div>
+  `;
+
+  // Prepend
+  realTimeAlertsList.insertBefore(li, realTimeAlertsList.firstChild);
+
+  // Crop list size to keep only last 10 entries
+  if (realTimeAlertsList.children.length > 10) {
+    realTimeAlertsList.lastChild.remove();
+  }
+}
+
+// Sweet melodious chime alarm for student entry / exit
+function playSweetAlarm(type = 'entry') {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const now = audioCtx.currentTime;
+
+    if (type === 'entry') {
+      // Pleasant rising melody chime (C5 -> E5 -> G5)
+      const notes = [523.25, 659.25, 783.99];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.22);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.09);
+        osc.stop(now + idx * 0.09 + 0.22);
+      });
+    } else {
+      // Gentle descending chime for exit (G5 -> E5 -> C5)
+      const notes = [783.99, 659.25, 523.25];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        gain.gain.setValueAtTime(0.15, now + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.26);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 0.26);
+      });
+    }
+  } catch (e) {
+    console.warn('Audio alarm notice:', e);
+  }
+}
+
+// SweetAlert popup replacing toaster for entry / exit
+function showEntryExitSweetAlert(type, record) {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const isEntry = type === 'entry';
+
+  // Play sweet melodious alarm
+  playSweetAlarm(type);
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: isEntry ? 'success' : 'info',
+      title: isEntry ? 'Student Entry Registered! 📖' : 'Student Exit Registered! 🚪',
+      html: `
+        <div style="text-align: left; background: ${isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc'}; padding: 14px 18px; border-radius: 12px; margin-top: 10px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 1.15rem; font-weight: 700; color: ${isEntry ? '#10b981' : '#6366f1'};">${record.name || 'Student'}</span>
+            <span style="font-size: 0.8rem; padding: 3px 10px; border-radius: 12px; font-weight: 700; background: ${isEntry ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; color: ${isEntry ? '#10b981' : '#6366f1'};">
+              ${isEntry ? '🟢 INSIDE' : '🔴 EXITED'}
+            </span>
+          </div>
+          <div style="font-size: 0.92rem; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
+            <div><strong>Enrollment No:</strong> <code style="font-size: 0.9rem; font-weight: 600;">${record.enrollment_no || 'N/A'}</code></div>
+            ${record.department ? `<div><strong>Department:</strong> ${record.department} ${record.course ? `(${record.course})` : ''}</div>` : ''}
+            <div><strong>Time:</strong> ${isEntry ? (record.entry_time || '-') : (record.exit_time || '-')}</div>
+            ${!isEntry && record.duration ? `<div><strong>Duration:</strong> <span style="font-weight: 700; color: #f59e0b;">${record.duration}</span></div>` : ''}
+          </div>
+        </div>
+      `,
+      timer: 4000,
+      timerProgressBar: true,
+      showConfirmButton: true,
+      confirmButtonText: 'Dismiss',
+      confirmButtonColor: isEntry ? '#10b981' : '#6366f1',
+      background: isDark ? '#131b2e' : '#ffffff',
+      color: isDark ? '#f1f5f9' : '#0f172a',
+      backdrop: 'rgba(0,0,0,0.35)'
+    });
+  }
+}
+
+// Audio indicators
+function playBeep(frequency = 440, duration = 0.1) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency;
+    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + duration);
+  } catch (e) { }
+}
+
+// ==========================================
+// FILTERS & SEARCH MODULES
+// ==========================================
+function getFilterValues() {
+  return {
+    search: document.getElementById('filterSearch').value.trim(),
+    department: document.getElementById('filterDepartment').value.trim(),
+    course: document.getElementById('filterCourse').value.trim(),
+    semester: document.getElementById('filterSemester').value,
+    date: document.getElementById('filterDate').value,
+    status: document.getElementById('filterStatus').value
+  };
+}
+
+filtersForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  fetchAttendanceRecords(getFilterValues());
+});
+
+btnResetFilters.addEventListener('click', () => {
+  filtersForm.reset();
+  fetchAttendanceRecords();
+});
+
+// Quick Reports Time-frames
+function getFormattedOffsetDate(daysOffset) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysOffset);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const date = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${date}`;
+}
+
+btnDailyReport.addEventListener('click', () => {
+  filtersForm.reset();
+  const today = getFormattedOffsetDate(0);
+  document.getElementById('filterDate').value = today;
+  fetchAttendanceRecords({ date: today });
+});
+
+btnWeeklyReport.addEventListener('click', () => {
+  filtersForm.reset();
+  // Filter for records in the last 7 days
+  const today = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(today.getDate() - 7);
+
+  // We can perform this filtering locally on allRecords or fetch all and filter
+  // For safety, fetch all and filter locally
+  fetchAttendanceRecords().then(() => {
+    allRecords = allRecords.filter(rec => {
+      const recDate = new Date(rec.entry_date);
+      return recDate >= sevenDaysAgo && recDate <= today;
+    });
+    currentPage = 1;
+    renderTable();
+    showToast('Filtered records for the past 7 days.', 'info');
+  });
+});
+
+btnMonthlyReport.addEventListener('click', () => {
+  filtersForm.reset();
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
+  fetchAttendanceRecords().then(() => {
+    allRecords = allRecords.filter(rec => {
+      const recDate = new Date(rec.entry_date);
+      return recDate >= thirtyDaysAgo && recDate <= today;
+    });
+    currentPage = 1;
+    renderTable();
+    showToast('Filtered records for the past 30 days.', 'info');
+  });
+});
+
+// ==========================================
+// EXPORTS IMPLEMENTATION (EXCEL, CSV, PDF)
+// ==========================================
+
+// 1. Export as CSV
+exportCsvBtn.addEventListener('click', () => {
+  if (allRecords.length === 0) {
+    showToast('No logs available to export.', 'warning');
+    return;
+  }
+
+  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
+  const rows = allRecords.map(rec => [
+    formatDateDDMMYYYY(rec.entry_date),
+    rec.name,
+    rec.enrollment_no,
+    rec.department,
+    rec.course,
+    rec.semester,
+    formatTimeDisplay(rec.entry_time),
+    rec.entry_location_name || '-',
+    formatDistanceDisplay(rec.distance_meters),
+    formatDateDDMMYYYY(rec.exit_date),
+    formatTimeDisplay(rec.exit_time),
+    rec.duration || '-',
+    rec.status
+  ]);
+
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += headers.join(",") + "\n";
+  rows.forEach(row => {
+    // Escape values in double quotes if they contain commas
+    const escapedRow = row.map(val => `"${String(val).replace(/"/g, '""')}"`);
+    csvContent += escapedRow.join(",") + "\n";
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const exportDateStr = formatDateDDMMYYYY(getFormattedOffsetDate(0)).replace(/\//g, '-');
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Library_Attendance_Report_${exportDateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('CSV downloaded successfully.', 'success');
+});
+
+// 2. Export as Excel (SheetJS)
+exportExcelBtn.addEventListener('click', () => {
+  if (allRecords.length === 0) {
+    showToast('No logs available to export.', 'warning');
+    return;
+  }
+
+  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
+  const rows = allRecords.map(rec => [
+    formatDateDDMMYYYY(rec.entry_date),
+    rec.name,
+    rec.enrollment_no,
+    rec.department,
+    rec.course,
+    rec.semester,
+    formatTimeDisplay(rec.entry_time),
+    rec.entry_location_name || '-',
+    formatDistanceDisplay(rec.distance_meters),
+    formatDateDDMMYYYY(rec.exit_date),
+    formatTimeDisplay(rec.exit_time),
+    rec.duration || '-',
+    rec.status
+  ]);
+
+  // Combine into worksheet data
+  const wsData = [headers, ...rows];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb, ws, "AttendanceLogs");
+
+  const exportDateStr = formatDateDDMMYYYY(getFormattedOffsetDate(0)).replace(/\//g, '-');
+  XLSX.writeFile(wb, `Library_Attendance_Report_${exportDateStr}.xlsx`);
+  showToast('Excel document generated successfully.', 'success');
+});
+
+// 3. Export as PDF (jsPDF + AutoTable)
+exportPdfBtn.addEventListener('click', () => {
+  if (allRecords.length === 0) {
+    showToast('No logs available to export.', 'warning');
+    return;
+  }
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape format
+
+    // Document Titles & Decoration
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(79, 70, 229); // Indigo theme color
+    doc.text("SMART LIBRARY SYSTEM - ATTENDANCE REPORT", 14, 18);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Generated on: ${new Date().toLocaleString('en-IN')} | Total Logs: ${allRecords.length}`, 14, 25);
+
+    // AutoTable mapping
+    const headers = [['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course & Sem', 'Entry Time', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status']];
+    const data = allRecords.map(rec => [
+      formatDateDDMMYYYY(rec.entry_date),
+      rec.name,
+      rec.enrollment_no,
+      rec.department,
+      `${rec.course} (${rec.semester})`,
+      formatTimeDisplay(rec.entry_time),
+      formatDistanceDisplay(rec.distance_meters),
+      formatDateDDMMYYYY(rec.exit_date),
+      formatTimeDisplay(rec.exit_time),
+      rec.duration || '-',
+      rec.status
+    ]);
+
+    doc.autoTable({
+      head: headers,
+      body: data,
+      startY: 30,
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229], fontStyle: 'bold' },
+      styles: { font: 'helvetica', fontSize: 9 },
+      columnStyles: {
+        2: { fontStyle: 'bold' }, // Enrollment No bold
+        9: { halign: 'center' }   // status centered
+      }
+    });
+
+    const exportDateStr = formatDateDDMMYYYY(getFormattedOffsetDate(0)).replace(/\//g, '-');
+    doc.save(`Library_Attendance_Report_${exportDateStr}.pdf`);
+    showToast('PDF compiled and downloaded successfully.', 'success');
+  } catch (error) {
+    console.error('PDF compile error:', error);
+    showToast('Failed to compile PDF. Library not found.', 'error');
+  }
+});
+
+// ==========================================
+// REGISTERED STUDENTS MODAL LOGIC
+// ==========================================
+async function fetchRegisteredStudents() {
+  if (!token) return;
+
+  registeredStudentsTableBody.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+        Loading registered student records...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch(`${API_URL}/api/admin/students`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      registeredStudentsList = data.students;
+      renderRegisteredStudents(data.students);
+    } else {
+      showToast(data.message || 'Failed to fetch students.', 'error');
+    }
+  } catch (error) {
+    console.error('Fetch registered students error:', error);
+    showToast('Failed to connect to student records database.', 'error');
+  }
+}
+
+function renderRegisteredStudents(students) {
+  registeredStudentsTableBody.innerHTML = '';
+  modalTotalStudentsCount.textContent = students.length;
+
+  if (students.length === 0) {
+    registeredStudentsTableBody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem 0;">
+          No registered student records found.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  students.forEach(student => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${student.name}</strong></td>
+      <td><code>${student.enrollment_no}</code></td>
+      <td>${student.email}</td>
+      <td>${student.mobile}</td>
+      <td>${student.department} <span style="color: var(--text-muted); font-size: 0.8rem;">(${student.course})</span></td>
+      <td>${student.semester}</td>
+      <td>${student.gender}</td>
+    `;
+    registeredStudentsTableBody.appendChild(tr);
+  });
+}
+
+// Local Search inside Registered Students Modal
+if (studentsSearchInput) {
+  studentsSearchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (!query) {
+      renderRegisteredStudents(registeredStudentsList);
+      return;
+    }
+    const filtered = registeredStudentsList.filter(student =>
+      student.name.toLowerCase().includes(query) ||
+      student.enrollment_no.toLowerCase().includes(query) ||
+      student.email.toLowerCase().includes(query) ||
+      student.department.toLowerCase().includes(query) ||
+      student.course.toLowerCase().includes(query) ||
+      student.semester.toLowerCase().includes(query) ||
+      student.gender.toLowerCase().includes(query)
+    );
+    renderRegisteredStudents(filtered);
+  });
+}
+
+// Close Modal wiring
+if (closeStudentsModal) closeStudentsModal.addEventListener('click', () => registeredStudentsModal.classList.remove('active'));
+if (closeStudentsModalBtn) closeStudentsModalBtn.addEventListener('click', () => registeredStudentsModal.classList.remove('active'));
+
+// ==========================================
+// INTERACTIVE DASHBOARD CARDS (BUTTONS)
+// ==========================================
+if (cardTotalStudents) {
+  cardTotalStudents.addEventListener('click', () => {
+    registeredStudentsModal.classList.add('active');
+    fetchRegisteredStudents();
+  });
+}
+
+if (cardInsideLibrary) {
+  cardInsideLibrary.addEventListener('click', () => {
+    filtersForm.reset();
+    document.getElementById('filterStatus').value = 'Inside';
+    navigateTo('reports');
+    fetchAttendanceRecords({ status: 'Inside' });
+    showToast('Filtered reports for students inside the library.', 'info');
+  });
+}
+
+if (cardEntriesToday) {
+  cardEntriesToday.addEventListener('click', () => {
+    filtersForm.reset();
+    const today = getFormattedOffsetDate(0);
+    document.getElementById('filterDate').value = today;
+    navigateTo('reports');
+    fetchAttendanceRecords({ date: today });
+    showToast('Filtered reports for today\'s entries.', 'info');
+  });
+}
+
+if (cardExitsToday) {
+  cardExitsToday.addEventListener('click', () => {
+    filtersForm.reset();
+    const today = getFormattedOffsetDate(0);
+    document.getElementById('filterDate').value = today;
+    document.getElementById('filterStatus').value = 'Exited';
+    navigateTo('reports');
+    fetchAttendanceRecords({ date: today, status: 'Exited' });
+    showToast('Filtered reports for today\'s checkouts.', 'info');
+  });
+}
+
+// ==========================================
+// MOBILE NAVIGATION FAB & DRAWER CONTROLS
+// ==========================================
+const mobileNavFab = document.getElementById('mobileNavFab');
+const mobileNavFabIcon = document.getElementById('mobileNavFabIcon');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+const mobileSidebarClose = document.getElementById('mobileSidebarClose');
+const adminSidebar = document.getElementById('adminSidebar') || document.querySelector('.sidebar');
+
+function toggleMobileSidebar(forceState) {
+  if (!adminSidebar) return;
+  const isOpen = forceState !== undefined ? forceState : !adminSidebar.classList.contains('open');
+
+  if (isOpen) {
+    adminSidebar.classList.add('open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+    if (mobileNavFab) mobileNavFab.classList.add('active');
+    if (mobileNavFabIcon) {
+      mobileNavFabIcon.classList.remove('fa-bars');
+      mobileNavFabIcon.classList.add('fa-xmark');
+    }
+  } else {
+    adminSidebar.classList.remove('open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+    if (mobileNavFab) mobileNavFab.classList.remove('active');
+    if (mobileNavFabIcon) {
+      mobileNavFabIcon.classList.remove('fa-xmark');
+      mobileNavFabIcon.classList.add('fa-bars');
+    }
+  }
+}
+
+if (mobileNavFab) {
+  mobileNavFab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMobileSidebar();
+  });
+}
+
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener('click', () => toggleMobileSidebar(false));
+}
+
+if (mobileSidebarClose) {
+  mobileSidebarClose.addEventListener('click', () => toggleMobileSidebar(false));
+}
+
+function openAdminSettings() {
+  toggleMobileSidebar(false);
+  if (adminSettingsModal) adminSettingsModal.classList.add('active');
+  loadAdminProfile();
+}
+
+const sidebarAdminBadge = document.getElementById('sidebarAdminBadge');
+if (sidebarAdminBadge) {
+  sidebarAdminBadge.addEventListener('click', openAdminSettings);
+}
+
+// ==========================================
+// ADMIN DASHBOARD SWITCH NAVIGATION
+// ==========================================
+function navigateTo(target) {
+  // Automatically close mobile sidebar when navigating
+  toggleMobileSidebar(false);
+
+  // Reset all active classes
+  menuDashBtn.classList.remove('active');
+  menuReportsBtn.classList.remove('active');
+  if (menuStudentsBtn) menuStudentsBtn.classList.remove('active');
+  if (menuQrCodeBtn) menuQrCodeBtn.classList.remove('active');
+
+  // Hide all sections
+  sectionDashboard.style.display = 'none';
+  sectionReports.style.display = 'none';
+  if (sectionStudents) sectionStudents.style.display = 'none';
+  if (sectionQrCode) sectionQrCode.style.display = 'none';
+
+  if (target === 'reports') {
+    menuReportsBtn.classList.add('active');
+    pageTitle.textContent = 'Attendance Reports';
+    sectionReports.style.display = 'block';
+    fetchAttendanceRecords();
+  } else if (target === 'students') {
+    if (menuStudentsBtn) menuStudentsBtn.classList.add('active');
+    pageTitle.textContent = 'Students Database';
+    if (sectionStudents) sectionStudents.style.display = 'block';
+    fetchStudentsDatabaseList();
+  } else if (target === 'qrcode') {
+    if (menuQrCodeBtn) menuQrCodeBtn.classList.add('active');
+    pageTitle.textContent = 'Library QR Code';
+    if (sectionQrCode) sectionQrCode.style.display = 'block';
+    renderLibraryQRCode();
+    setTimeout(renderLibraryQRCode, 50);
+  } else {
+    menuDashBtn.classList.add('active');
+    pageTitle.textContent = 'Dashboard';
+    sectionDashboard.style.display = 'block';
+    fetchDashboardStats();
+    renderLibraryQRCode();
+    setTimeout(renderLibraryQRCode, 50);
+  }
+}
+
+if (menuQrCodeBtn) {
+  menuQrCodeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateTo('qrcode');
+  });
+}
+
+menuDashBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  navigateTo('dashboard');
+});
+
+menuReportsBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  navigateTo('reports');
+});
+
+if (menuStudentsBtn) {
+  menuStudentsBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateTo('students');
+  });
+}
+
+// ==========================================
+// SECURITY LOGIN & SESSION RULES
+// ==========================================
+function showAuthScreen() {
+  adminAuthContainer.style.display = 'flex';
+  adminDashboardContainer.style.display = 'none';
+}
+
+function showDashboardScreen() {
+  adminAuthContainer.style.display = 'none';
+  adminDashboardContainer.style.display = 'flex';
+  startClock();
+  fetchDashboardStats();
+  loadAdminProfile();
+  renderLibraryQRCode();
+  initSocket();
+
+  // Refresh stats every 30s automatically
+  if (!window._dashboardStatsInterval) {
+    window._dashboardStatsInterval = setInterval(fetchDashboardStats, 30000);
+  }
+}
+
+// Login
+adminLoginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const usernameOrEnrollment = (document.getElementById('adminUsername').value || '').trim();
+  const password = (document.getElementById('adminPassword').value || '').trim();
+
+  showLoader(true);
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usernameOrEnrollment, email: usernameOrEnrollment, password })
+    });
+    const contentType = res.headers.get('content-type');
+    let data;
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const isGitHub = window.location.hostname.includes('github.io');
+      const msg = isGitHub
+        ? 'GitHub Pages cannot run Node.js backend. Please open the system at http://localhost:5000 on your computer, or host the backend on Render/Railway.'
+        : `Server returned non-JSON response (${res.status}). Ensure backend is running.`;
+      showCustomLoginPopup(false, msg);
+      return;
+    }
+
+    if (res.ok && data.success) {
+      if (data.role === 'admin') {
+        token = data.token;
+        localStorage.setItem('admin_token', token);
+        adminLoginForm.reset();
+        showCustomLoginPopup(true, 'Welcome Admin!', () => {
+          showDashboardScreen();
+          loadAdminProfile();
+        });
+      } else if (data.role === 'student') {
+        // Student logged in through admin screen -> Redirect to student portal
+        localStorage.setItem('student_token', data.token);
+        adminLoginForm.reset();
+        showCustomLoginPopup(true, 'Welcome Student!', () => {
+          window.location.href = 'student.html';
+        });
+      }
+    } else {
+      showCustomLoginPopup(false, data.message || 'Authentication rejected.');
+    }
+  } catch (error) {
+    console.error('Admin Login error:', error);
+    const isGitHub = window.location.hostname.includes('github.io');
+    showCustomLoginPopup(false, isGitHub
+      ? 'GitHub Pages only hosts static files. To use the app, run the backend and open http://localhost:5000'
+      : (error.message || 'Control database server is offline.'));
+  } finally {
+    showLoader(false);
+  }
+});
+
+// Logout
+function logout() {
+  toggleMobileSidebar(false);
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+  if (window._dashboardStatsInterval) {
+    clearInterval(window._dashboardStatsInterval);
+    window._dashboardStatsInterval = null;
+  }
+  token = null;
+  localStorage.removeItem('admin_token');
+  showAuthScreen();
+  showToast('Admin session terminated.', 'info');
+}
+
+adminLogoutBtn.addEventListener('click', logout);
+
+// Modals Triggers
+if (adminSettingsBtn) {
+  adminSettingsBtn.addEventListener('click', openAdminSettings);
+}
+closeAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
+cancelAdminSettings.addEventListener('click', () => adminSettingsModal.classList.remove('active'));
+
+// Load current Admin Profile information
+async function loadAdminProfile() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_URL}/api/admin/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.admin) {
+      const nameInput = document.getElementById('adminSettingsName');
+      const emailInput = document.getElementById('adminSettingsEmail');
+      const usernameInput = document.getElementById('adminSettingsUsername');
+      if (nameInput) nameInput.value = data.admin.name || '';
+      if (emailInput) emailInput.value = data.admin.email || '';
+      if (usernameInput) usernameInput.value = data.admin.username || '';
+      if (adminProfileName) {
+        adminProfileName.textContent = data.admin.name || 'Library Admin';
+      }
+      const adminAvatar = document.getElementById('adminAvatar');
+      if (adminAvatar && data.admin.name) {
+        adminAvatar.textContent = data.admin.name.trim().charAt(0).toUpperCase();
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching admin profile:', err);
+  }
+}
+
+// Update Admin Profile (Name, Email ID, Username)
+if (adminProfileForm) {
+  adminProfileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('adminSettingsName').value.trim();
+    const email = document.getElementById('adminSettingsEmail').value.trim();
+    const username = document.getElementById('adminSettingsUsername').value.trim();
+
+    showLoader(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, email, username })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        if (adminProfileName) {
+          adminProfileName.textContent = data.admin.name;
+        }
+        const adminAvatar = document.getElementById('adminAvatar');
+        if (adminAvatar && data.admin.name) {
+          adminAvatar.textContent = data.admin.name.trim().charAt(0).toUpperCase();
+        }
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Profile Updated! ✨',
+            text: data.message || 'Admin profile saved successfully.',
+            timer: 3000,
+            timerProgressBar: true,
+            confirmButtonColor: '#6366f1'
+          });
+        } else {
+          showToast(data.message || 'Admin profile saved.', 'success');
+        }
+      } else {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Update Failed',
+            text: data.message || 'Could not update profile.',
+            confirmButtonColor: '#ef4444'
+          });
+        } else {
+          showToast(data.message || 'Failed to update profile.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Admin profile update error:', error);
+      showToast('Connection error updating profile.', 'error');
+    } finally {
+      showLoader(false);
+    }
+  });
+}
+
+adminChangePasswordForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const oldPassword = document.getElementById('adminOldPassword').value;
+  const newPassword = document.getElementById('adminNewPassword').value;
+  const confirmPassword = document.getElementById('adminConfirmPassword').value;
+
+  if (newPassword !== confirmPassword) {
+    showToast('New passwords do not match.', 'error');
+    return;
+  }
+
+  showLoader(true);
+  try {
+    const res = await fetch(`${API_URL}/api/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ oldPassword, newPassword })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Password Changed!',
+          text: data.message,
+          timer: 3000,
+          timerProgressBar: true,
+          confirmButtonColor: '#10b981'
+        });
+      } else {
+        showToast(data.message, 'success');
+      }
+      adminChangePasswordForm.reset();
+      adminSettingsModal.classList.remove('active');
+    } else {
+      showToast(data.message || 'Failed to change password.', 'error');
+    }
+  } catch (error) {
+    console.error('Admin password change error:', error);
+    showToast('Connection timed out updating database.', 'error');
+  } finally {
+    showLoader(false);
+  }
+});
+
+// ==========================================
+// QR CODE GENERATION & DOWNLOAD LOGIC
+// ==========================================
+function renderLibraryQRCode() {
+  const configQR = document.getElementById('activeQRConfig');
+  const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  
+  if (typeof QRious === 'undefined') {
+    console.warn('QRious library is not loaded');
+    return;
+  }
+
+  // 1. Render on #adminQRCanvas (Dedicated QR Code Section)
+  const qrCanvas = document.getElementById('adminQRCanvas');
+  if (qrCanvas) {
+    try {
+      new QRious({
+        element: qrCanvas,
+        value: qrValue,
+        size: 220,
+        background: '#ffffff',
+        foreground: '#000000'
+      });
+    } catch (err) {
+      console.error('Error rendering QRious QR code (adminQRCanvas):', err);
+    }
+  }
+
+  // 2. Render on #dashboardQRCanvas (Dashboard QR Code Card)
+  const dashCanvas = document.getElementById('dashboardQRCanvas');
+  if (dashCanvas) {
+    try {
+      new QRious({
+        element: dashCanvas,
+        value: qrValue,
+        size: 200,
+        background: '#ffffff',
+        foreground: '#000000'
+      });
+    } catch (err) {
+      console.error('Error rendering QRious QR code (dashboardQRCanvas):', err);
+    }
+  }
+}
+
+function downloadQRCode(format, canvasId = 'adminQRCanvas') {
+  let qrCanvas = document.getElementById(canvasId);
+  if (!qrCanvas) {
+    qrCanvas = document.getElementById('adminQRCanvas') || document.getElementById('dashboardQRCanvas');
+  }
+  const configQR = document.getElementById('activeQRConfig');
+  const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  if (!qrCanvas) return;
+
+  // Solid white background canvas to avoid black backgrounds on JPEG
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = qrCanvas.width || 220;
+  tempCanvas.height = qrCanvas.height || 220;
+  const ctx = tempCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+  ctx.drawImage(qrCanvas, 0, 0);
+
+  const isJpg = format === 'jpeg' || format === 'jpg';
+  const mimeType = isJpg ? 'image/jpeg' : 'image/png';
+  const fileExt = isJpg ? 'jpeg' : 'png';
+  const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
+
+  const downloadLink = document.createElement('a');
+  downloadLink.href = dataUrl;
+  downloadLink.download = `Library_QR_Code_${qrValue}.${fileExt}`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+
+  showToast(`QR Code downloaded in .${fileExt.toUpperCase()} format.`, 'success');
+}
+
+function printQRCode(canvasId = 'adminQRCanvas') {
+  let qrCanvas = document.getElementById(canvasId);
+  if (!qrCanvas) {
+    qrCanvas = document.getElementById('adminQRCanvas') || document.getElementById('dashboardQRCanvas');
+  }
+  const configQR = document.getElementById('activeQRConfig');
+  const qrValue = (configQR && configQR.textContent.trim()) ? configQR.textContent.trim() : 'SMART_LIBRARY_QR_2026';
+  if (!qrCanvas) return;
+
+  const url = qrCanvas.toDataURL('image/png');
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    showToast('Please allow popups to print QR Code', 'error');
+    return;
+  }
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Print Library QR Code</title>
+        <style>
+          body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
+          img { width: 300px; height: 300px; border: 1px solid #ccc; padding: 10px; border-radius: 8px; }
+          h1 { margin-bottom: 5px; }
+          p { color: #666; margin-top: 5px; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <h1>Smart Library System</h1>
+        <p>Scan this QR code to Record Entry/Exit</p>
+        <img src="${url}" />
+        <p style="font-weight: bold; margin-top: 15px;">QR Code String: ${qrValue}</p>
+        <script>
+          window.onload = function() { window.print(); window.close(); }
+        <\/script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+// ==========================================
+// APPLICATION INITIALIZATION
+// ==========================================
+function initAdminApp() {
+  initTheme();
+
+  // Read active QR configuration from HTML or process.env
+  const configQR = document.getElementById('activeQRConfig');
+  if (configQR && typeof process !== 'undefined' && process.env) {
+    configQR.textContent = process.env.LIBRARY_QR_CODE || 'SMART_LIBRARY_QR_2026';
+  }
+
+  // Initial QR Code Render (renders both dashboard and dedicated section QR canvases)
+  renderLibraryQRCode();
+
+  // Dedicated QR Section Actions (Download PNG, Download JPEG, Print)
+  const downloadQRPngBtn = document.getElementById('downloadQRPngBtn');
+  if (downloadQRPngBtn) {
+    downloadQRPngBtn.onclick = () => downloadQRCode('png', 'adminQRCanvas');
+  }
+
+  const downloadQRJpgBtn = document.getElementById('downloadQRJpgBtn');
+  if (downloadQRJpgBtn) {
+    downloadQRJpgBtn.onclick = () => downloadQRCode('jpeg', 'adminQRCanvas');
+  }
+
+  const downloadQRBtn = document.getElementById('downloadQRBtn');
+  if (downloadQRBtn) {
+    downloadQRBtn.onclick = () => downloadQRCode('png', 'adminQRCanvas');
+  }
+
+  const printQRBtn = document.getElementById('printQRBtn');
+  if (printQRBtn) {
+    printQRBtn.onclick = () => printQRCode('adminQRCanvas');
+  }
+
+  // Dashboard QR Section Actions (Download PNG, Download JPEG, Print)
+  const dashDownloadQRPngBtn = document.getElementById('dashDownloadQRPngBtn');
+  if (dashDownloadQRPngBtn) {
+    dashDownloadQRPngBtn.onclick = () => downloadQRCode('png', 'dashboardQRCanvas');
+  }
+
+  const dashDownloadQRJpgBtn = document.getElementById('dashDownloadQRJpgBtn');
+  if (dashDownloadQRJpgBtn) {
+    dashDownloadQRJpgBtn.onclick = () => downloadQRCode('jpeg', 'dashboardQRCanvas');
+  }
+
+  const dashPrintQRBtn = document.getElementById('dashPrintQRBtn');
+  if (dashPrintQRBtn) {
+    dashPrintQRBtn.onclick = () => printQRCode('dashboardQRCanvas');
+  }
+
+  // File upload input change
+  if (studentsImportFile) {
+    studentsImportFile.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleStudentFileUpload(e.target.files[0]);
+      }
+    });
+  }
+
+  // Drag and drop event handling
+  if (importDragArea) {
+    importDragArea.addEventListener('click', () => {
+      if (studentsImportFile) studentsImportFile.click();
+    });
+
+    importDragArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      importDragArea.style.borderColor = 'var(--primary)';
+      importDragArea.style.background = 'var(--sidebar-active)';
+    });
+
+    importDragArea.addEventListener('dragleave', () => {
+      if (importFilePending) {
+        importDragArea.style.borderColor = 'var(--success)';
+        importDragArea.style.background = 'rgba(16, 185, 129, 0.03)';
+      } else {
+        importDragArea.style.borderColor = 'var(--input-border)';
+        importDragArea.style.background = 'rgba(0,0,0,0.02)';
+      }
+    });
+
+    importDragArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleStudentFileUpload(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  // Cancel pending import
+  if (btnCancelImport) {
+    btnCancelImport.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearImportUI();
+    });
+  }
+
+  // Preview Row addition, cancel, confirm listeners
+  if (btnPreviewAddRow) {
+    btnPreviewAddRow.addEventListener('click', () => {
+      previewStudentsList.push({
+        name: '',
+        enrollment_no: '',
+        email: '',
+        mobile: '',
+        department: '',
+        course: '',
+        semester: '',
+        gender: '',
+        password: ''
+      });
+      renderPreviewTable();
+    });
+  }
+
+  if (btnPreviewCancel) {
+    btnPreviewCancel.addEventListener('click', () => {
+      if (confirm("Are you sure you want to discard the uploaded file preview? All changes will be lost.")) {
+        clearImportUI();
+      }
+    });
+  }
+
+  if (btnPreviewConfirm) {
+    btnPreviewConfirm.addEventListener('click', confirmPreviewAndImport);
+  }
+
+  // Load Demo Data button listener
+  if (btnLoadDemoData) {
+    btnLoadDemoData.addEventListener('click', () => {
+      previewStudentsList = [
+        { name: 'John Doe', enrollment_no: 'DEMO001', email: 'john.doe@demo.com', mobile: '9876543210', department: 'Computer Science', course: 'B.Tech', semester: '3rd', gender: 'Male', password: 'john123' },
+        { name: 'Alice Smith', enrollment_no: 'DEMO002', email: 'alice.smith@demo.com', mobile: '9876543211', department: 'Information Technology', course: 'B.Tech', semester: '5th', gender: 'Female', password: 'alice123' }
+      ];
+      if (importPreviewCard) importPreviewCard.style.display = 'block';
+      renderPreviewTable();
+      showToast('Demo student records loaded into preview table. Feel free to edit, add, or delete rows!', 'success');
+    });
+  }
+
+  // Download CSV template
+  if (btnDownloadTemplate) {
+    btnDownloadTemplate.addEventListener('click', downloadCSVTemplate);
+  }
+
+  // Students Database list search filtering
+  if (studentsDbSearchInput) {
+    studentsDbSearchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      if (!query) {
+        filteredStudentsDb = [...allStudentsDb];
+      } else {
+        filteredStudentsDb = allStudentsDb.filter(student =>
+          (student.name && student.name.toLowerCase().includes(query)) ||
+          (student.enrollment_no && student.enrollment_no.toLowerCase().includes(query)) ||
+          (student.email && student.email.toLowerCase().includes(query)) ||
+          (student.department && student.department.toLowerCase().includes(query)) ||
+          (student.course && student.course.toLowerCase().includes(query)) ||
+          (student.semester && student.semester.toLowerCase().includes(query)) ||
+          (student.gender && student.gender.toLowerCase().includes(query))
+        );
+      }
+      currentStudentsPage = 1;
+      renderStudentsDbTable();
+    });
+  }
+
+  // Students DB Pagination Listeners
+  if (btnStudentsDbPrevPage) {
+    btnStudentsDbPrevPage.addEventListener('click', () => {
+      if (currentStudentsPage > 1) {
+        currentStudentsPage--;
+        renderStudentsDbTable();
+      }
+    });
+  }
+
+  if (btnStudentsDbNextPage) {
+    btnStudentsDbNextPage.addEventListener('click', () => {
+      const startIndex = (currentStudentsPage - 1) * studentsRowsPerPage;
+      const endIndex = startIndex + studentsRowsPerPage;
+      if (endIndex < filteredStudentsDb.length) {
+        currentStudentsPage++;
+        renderStudentsDbTable();
+      }
+    });
+  }
+
+  // Initial authentication check & screen routing
+  if (token) {
+    showDashboardScreen();
+  } else {
+    showAuthScreen();
+  }
+}
+
+// Execute immediately if DOM ready, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAdminApp);
+} else {
+  initAdminApp();
+}
+
+// ==========================================
+// STUDENTS DATABASE & BULK IMPORT LOGIC
+// ==========================================
+
+// Fetch Students Database list
+async function fetchStudentsDatabaseList() {
+  if (!token) {
+    logout();
+    return;
+  }
+  showLoader(true);
+  try {
+    const res = await fetch(`${API_URL}/api/admin/students`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      allStudentsDb = Array.isArray(data.students) ? data.students : [];
+      filteredStudentsDb = [...allStudentsDb];
+      currentStudentsPage = 1;
+      renderStudentsDbTable();
+    } else {
+      showToast(data.message || 'Failed to fetch student database records.', 'error');
+      if (res.status === 401 || res.status === 403) {
+        logout();
+      }
+    }
+  } catch (error) {
+    console.error('Fetch student database records error:', error);
+    showToast('Failed to connect to the database server.', 'error');
+  } finally {
+    showLoader(false);
+  }
+}
+
+// Render paginated student database rows
+function renderStudentsDbTable() {
+  if (!studentsDbTableBody) return;
+  studentsDbTableBody.innerHTML = '';
+
+  if (filteredStudentsDb.length === 0) {
+    studentsDbTableBody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+          No student database records found.
+        </td>
+      </tr>
+    `;
+    if (studentsDbPageInfo) studentsDbPageInfo.textContent = 'Showing 0 to 0 of 0 entries';
+    if (btnStudentsDbPrevPage) btnStudentsDbPrevPage.disabled = true;
+    if (btnStudentsDbNextPage) btnStudentsDbNextPage.disabled = true;
+    return;
+  }
+
+  const startIndex = (currentStudentsPage - 1) * studentsRowsPerPage;
+  const endIndex = Math.min(startIndex + studentsRowsPerPage, filteredStudentsDb.length);
+  const paginatedStudents = filteredStudentsDb.slice(startIndex, endIndex);
+
+  paginatedStudents.forEach(student => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${student.name}</strong></td>
+      <td><code>${student.enrollment_no}</code></td>
+      <td>${student.email}</td>
+      <td>${student.mobile}</td>
+      <td>${student.department}</td>
+      <td>${student.course} <span style="color: var(--text-muted); font-size: 0.8rem;">(${student.semester})</span></td>
+      <td>${student.gender}</td>
+      <td><code>${student.plain_password || 'student123'}</code></td>
+      <td style="text-align: center;">
+        <button class="btn btn-sm btn-danger btn-delete-student" data-id="${student.id}" style="padding: 4px 10px; font-size: 0.8rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Delete Student">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+      </td>
+    `;
+    studentsDbTableBody.appendChild(tr);
+  });
+
+  if (studentsDbPageInfo) {
+    studentsDbPageInfo.textContent = `Showing ${startIndex + 1} to ${endIndex} of ${filteredStudentsDb.length} entries`;
+  }
+
+  if (btnStudentsDbPrevPage) btnStudentsDbPrevPage.disabled = currentStudentsPage === 1;
+  if (btnStudentsDbNextPage) btnStudentsDbNextPage.disabled = endIndex >= filteredStudentsDb.length;
+
+  // Add click handlers for delete buttons
+  document.querySelectorAll('.btn-delete-student').forEach(button => {
+    button.addEventListener('click', async (e) => {
+      const studentId = button.getAttribute('data-id');
+      const row = button.closest('tr');
+      const studentName = row ? row.querySelector('td strong')?.textContent || 'this student' : 'this student';
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Delete Student?',
+          text: `Are you sure you want to delete student "${studentName}"? All their attendance records will also be deleted.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: 'Yes, delete student!'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            await deleteStudent(studentId);
+          }
+        });
+      } else if (confirm(`Are you sure you want to delete student "${studentName}"?`)) {
+        await deleteStudent(studentId);
+      }
+    });
+  });
+}
+
+// Bulk Delete All Students
+async function deleteAllStudents() {
+  if (!token) return;
+  const doDeleteAll = async () => {
+    showLoader(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/students`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || 'All students deleted successfully.', 'success');
+        await fetchStudentsDatabaseList();
+        await fetchAttendanceRecords();
+        await fetchDashboardStats();
+      } else {
+        showToast(data.message || 'Failed to delete all students.', 'error');
+      }
+    } catch (error) {
+      console.error('Delete all students error:', error);
+      showToast('Failed to delete all students.', 'error');
+    } finally {
+      showLoader(false);
+    }
+  };
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Delete ALL Students?',
+      text: 'Are you sure you want to permanently delete ALL registered students and their attendance history? This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete all!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        doDeleteAll();
+      }
+    });
+  } else if (confirm('Are you sure you want to permanently delete ALL students?')) {
+    doDeleteAll();
+  }
+}
+
+const btnDeleteAllStudents = document.getElementById('btnDeleteAllStudents');
+if (btnDeleteAllStudents) {
+  btnDeleteAllStudents.addEventListener('click', deleteAllStudents);
+}
+
+// Delete student record
+async function deleteStudent(studentId) {
+  if (!token) return;
+  showLoader(true);
+  try {
+    const res = await fetch(`${API_URL}/api/admin/students/${studentId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(data.message || 'Student deleted successfully.', 'success');
+      // Refresh list
+      await fetchStudentsDatabaseList();
+      // Refresh total counts
+      await fetchDashboardStats();
+    } else {
+      showToast(data.message || 'Failed to delete student.', 'error');
+    }
+  } catch (error) {
+    console.error('Delete student error:', error);
+    showToast('Failed to connect to the database server.', 'error');
+  } finally {
+    showLoader(false);
+  }
+}
+
+// Map key headers from raw rows (case-insensitive and trimmed)
+function mapImportedData(rawRows) {
+  return rawRows.map(row => {
+    const student = {};
+    Object.keys(row).forEach(key => {
+      const val = String(row[key] !== undefined && row[key] !== null ? row[key] : '').trim();
+      const normalizedKey = key.toLowerCase().trim().replace(/[^a-z0-9_]/g, '_');
+
+      if (normalizedKey.includes('name')) {
+        student.name = val;
+      } else if (normalizedKey.includes('enrollment') || normalizedKey.includes('roll')) {
+        student.enrollment_no = val;
+      } else if (normalizedKey.includes('email') || normalizedKey.includes('mail')) {
+        student.email = val;
+      } else if (normalizedKey.includes('mobile') || normalizedKey.includes('phone') || normalizedKey.includes('contact')) {
+        student.mobile = val;
+      } else if (normalizedKey.includes('department') || normalizedKey.includes('dept')) {
+        student.department = val;
+      } else if (normalizedKey.includes('course')) {
+        student.course = val;
+      } else if (normalizedKey.includes('semester') || normalizedKey.includes('sem')) {
+        student.semester = val;
+      } else if (normalizedKey.includes('gender') || normalizedKey.includes('sex')) {
+        student.gender = val;
+      } else if (normalizedKey.includes('password') || normalizedKey.includes('pass')) {
+        student.password = val;
+      }
+    });
+    return student;
+  });
+}
+
+// Handle Student File Upload (Automatically parses the file and loads the preview panel)
+function handleStudentFileUpload(file) {
+  if (!file) return;
+  const fileName = file.name;
+  const fileSizeKB = (file.size / 1024).toFixed(1);
+
+  // Validate extension
+  const extension = fileName.split('.').pop().toLowerCase();
+  if (!['csv', 'xlsx', 'xls', 'json'].includes(extension)) {
+    showToast('Unsupported file type. Please upload CSV, Excel, or JSON.', 'error');
+    return;
+  }
+
+  importFilePending = file;
+
+  // Show status UI
+  if (importFileName) importFileName.textContent = fileName;
+  if (importFileSize) importFileSize.textContent = `(${fileSizeKB} KB)`;
+  if (importFileStatus) importFileStatus.style.display = 'flex';
+  if (importDragArea) {
+    importDragArea.style.borderColor = 'var(--success)';
+    importDragArea.style.background = 'rgba(16, 185, 129, 0.03)';
+  }
+
+  showLoader(true);
+
+  const processParsedData = (parsedList) => {
+    previewStudentsList = parsedList;
+    showLoader(false);
+    if (importPreviewCard) importPreviewCard.style.display = 'block';
+    renderPreviewTable();
+    showToast('File uploaded successfully! You can now preview and edit the records below.', 'success');
+  };
+
+  const reader = new FileReader();
+
+  if (extension === 'json') {
+    reader.onload = function (e) {
+      try {
+        const rawData = JSON.parse(e.target.result);
+        const list = Array.isArray(rawData) ? rawData : [rawData];
+        const parsed = mapImportedData(list);
+        processParsedData(parsed);
+      } catch (err) {
+        showToast('JSON parsing failed. Invalid syntax.', 'error');
+        showLoader(false);
+      }
+    };
+    reader.readAsText(file);
+  } else {
+    // Excel/CSV using SheetJS
+    reader.onload = function (e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rawList = XLSX.utils.sheet_to_json(worksheet);
+        const parsed = mapImportedData(rawList);
+        processParsedData(parsed);
+      } catch (err) {
+        console.error('SheetJS parse error:', err);
+        showToast('File reading or parsing error.', 'error');
+        showLoader(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+// Render paginated student database rows for editable preview table
+function renderPreviewTable() {
+  if (!previewTableBody) return;
+  previewTableBody.innerHTML = '';
+
+  if (previewCountText) {
+    previewCountText.textContent = previewStudentsList.length;
+  }
+
+  if (previewStudentsList.length === 0) {
+    previewTableBody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 3rem 0; font-weight: 600;">
+          No preview records. Click "Add Row" or upload a file.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  previewStudentsList.forEach((student, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="name" value="${student.name || ''}" placeholder="Full Name"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="enrollment_no" value="${student.enrollment_no || ''}" placeholder="Enrollment No"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="email" value="${student.email || ''}" placeholder="Email"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="mobile" value="${student.mobile || ''}" placeholder="Mobile"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="department" value="${student.department || ''}" placeholder="Department"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="course" value="${student.course || ''}" placeholder="Course"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="semester" value="${student.semester || ''}" placeholder="Semester"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="gender" value="${student.gender || ''}" placeholder="Gender"></td>
+      <td><input type="text" class="preview-table-input" data-index="${index}" data-field="password" value="${student.password || student.plain_password || ''}" placeholder="Password"></td>
+      <td style="text-align: center;">
+        <button type="button" class="btn btn-secondary btn-delete-preview-row" data-index="${index}" style="padding: 0.25rem 0.5rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.2); font-size: 0.8rem; background: transparent; height: auto;" title="Remove row">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </td>
+    `;
+    previewTableBody.appendChild(tr);
+  });
+
+  // Bind change listeners to input elements to update the local state array
+  document.querySelectorAll('.preview-table-input').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const idx = parseInt(input.getAttribute('data-index'));
+      const field = input.getAttribute('data-field');
+      previewStudentsList[idx][field] = input.value;
+    });
+  });
+
+  // Bind delete buttons
+  document.querySelectorAll('.btn-delete-preview-row').forEach(button => {
+    button.addEventListener('click', () => {
+      const idx = parseInt(button.getAttribute('data-index'));
+      previewStudentsList.splice(idx, 1);
+      renderPreviewTable();
+    });
+  });
+}
+
+// Clear File Import UI
+function clearImportUI() {
+  importFilePending = null;
+  previewStudentsList = [];
+  if (studentsImportFile) studentsImportFile.value = '';
+  if (importFileStatus) importFileStatus.style.display = 'none';
+  if (importPreviewCard) importPreviewCard.style.display = 'none';
+  if (importDragArea) {
+    importDragArea.style.borderColor = 'var(--input-border)';
+    importDragArea.style.background = 'rgba(0,0,0,0.02)';
+  }
+}
+
+// Send finalized preview state to server
+async function confirmPreviewAndImport() {
+  if (previewStudentsList.length === 0) {
+    showToast('No students to import. Add rows first.', 'error');
+    return;
+  }
+
+  // Basic validation of fields
+  const invalidRows = previewStudentsList.filter(s => !s.name || !s.enrollment_no || !s.email || !s.password || !String(s.password).trim());
+  if (invalidRows.length > 0) {
+    showToast(`Error: ${invalidRows.length} student row(s) are missing required fields (Name, Enrollment No, Email, or Password). Please fill all fields before confirming the import.`, 'error');
+    return;
+  }
+
+  showLoader(true);
+  try {
+    const res = await fetch(`${API_URL}/api/admin/students/import`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ students: previewStudentsList })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(data.message, 'success');
+      if (data.errors && data.errors.length > 0) {
+        console.warn('Import warnings/skipped rows:', data.errors);
+        showToast(`Imported ${data.importedCount} students. Check console for details.`, 'warning');
+      }
+      clearImportUI();
+      await fetchStudentsDatabaseList();
+      await fetchDashboardStats();
+    } else {
+      showToast(data.message || 'Bulk student import failed.', 'error');
+    }
+  } catch (err) {
+    console.error('Submit import request error:', err);
+    showToast('Connection error during import submission.', 'error');
+  } finally {
+    showLoader(false);
+  }
+}
+
+// Download Sample CSV Template
+function downloadCSVTemplate() {
+  const headers = ['name', 'enrollment_no', 'email', 'mobile', 'department', 'course', 'semester', 'gender', 'password'];
+  const sampleRow = ['John Doe', 'EN10024', 'john.doe@college.edu', '9876543210', 'Computer Science', 'B.Tech', '3rd', 'Male', 'student123'];
+
+  const csvContent = "data:text/csv;charset=utf-8,"
+    + [headers.join(','), sampleRow.join(',')].join('\n');
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "library_students_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Sample student template downloaded.', 'success');
+}
+
+// --- Custom Login Popup ---
+function showCustomLoginPopup(isSuccess, message, callback) {
+  // Create overlay with blur
+  const overlay = document.createElement('div');
+  overlay.className = 'custom-login-overlay';
+
+  // Create popup content
+  const popup = document.createElement('div');
+  popup.className = 'custom-login-popup ' + (isSuccess ? 'success' : 'error');
+
+  const icon = document.createElement('div');
+  icon.className = 'custom-login-icon';
+  icon.innerText = isSuccess ? '🎉' : '❌';
+
+  const text = document.createElement('div');
+  text.className = 'custom-login-text';
+  text.innerText = isSuccess ? 'Successfully!' : (message || 'Login failed.');
+
+  popup.appendChild(icon);
+  popup.appendChild(text);
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+
+  // Show party poppers cross visual effect if success
+  if (isSuccess) {
+    const triggerConfetti = () => {
+      var duration = 2000;
+      var end = Date.now() + duration;
+
+      (function frame() {
+        // launch from left edge
+        confetti({
+          particleCount: 7,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
+          zIndex: 999999
+        });
+        // launch from right edge
+        confetti({
+          particleCount: 7,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'],
+          zIndex: 999999
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    };
+
+    if (!window.confetti) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js';
+      script.onload = triggerConfetti;
+      document.head.appendChild(script);
+    } else {
+      triggerConfetti();
+    }
+  }
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    overlay.remove();
+    if (callback) callback();
+  }, 3000);
+}
+
+// ==========================================
+// PASSWORD VISIBILITY TOGGLE LOGIC
+// ==========================================
+function initPasswordToggles() {
+  document.querySelectorAll('.btn-toggle-password').forEach(btn => {
+    if (btn.dataset.initialized) return;
+    btn.dataset.initialized = 'true';
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = btn.getAttribute('data-target');
+      const input = targetId ? document.getElementById(targetId) : btn.parentElement.querySelector('input');
+      if (!input) return;
+
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+          icon.className = 'fa-solid fa-eye-slash';
+        }
+        btn.setAttribute('title', 'Hide Password');
+      } else {
+        input.type = 'password';
+        if (icon) {
+          icon.className = 'fa-solid fa-eye';
+        }
+        btn.setAttribute('title', 'Show Password');
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initPasswordToggles);
+initPasswordToggles();
+

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Student Portal - Smart Library QR System</title>
+  
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <meta name="theme-color" content="#4a90e2">
+  <link rel="apple-touch-icon" href="logo.jpg">
+
+  <!-- CSS Styles -->
+  <!-- Anti-Cache Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="css/style.css?v=3.5">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- html5-qrcode Library for Camera Scanner -->
+  <script src="js/html5-qrcode.min.js" defer></script>
+
+  <!-- SweetAlert2 Library -->
+  <script src="js/sweetalert2.all.min.js"></script>
+</head>
+<body>
+
+  <!-- LOADING ANIMATION OVERLAY -->
+  <div class="loader-container" id="globalLoader">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ========================================================== -->
+  <!-- AUTHENTICATION PANELS (LOGIN & REGISTRATION) -->
+  <!-- ========================================================== -->
+  <div class="auth-wrapper" id="authContainer">
+    <!-- Decorative Left Panel -->
+    <div class="auth-panel-info">
+      <div class="auth-info-content">
+        <h2>Smart Library QR Entry Management System</h2>
+        <p>A fast, contactless, and paperless entry system for students and library administration.</p>
+        <div class="auth-features">
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>Scan QR with your camera to record Entry & Exit instantly.</span>
+          </div>
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Track your library hours and active sessions in real-time.</span>
+          </div>
+          <div class="auth-feat-item">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Secure encryption and JWT-based session access.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Form Right Panel -->
+    <div class="auth-panel-form">
+      
+      <!-- Auth Top Nav -->
+      <div class="auth-top-nav">
+        <a href="index.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;">
+          <i class="fa-solid fa-house"></i> Home
+        </a>
+      </div>
+
+      <!-- 1. UNIFIED LOGIN FORM (Student & Admin) -->
+      <div class="auth-form-card" id="loginFormCard">
+        <div class="auth-form-header">
+          <h3>Welcome to Library System</h3>
+          <p>Login with your Student or Admin credentials</p>
+        </div>
+        
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginIdentifier">User ID / Email / Username</label>
+            <input type="text" id="loginIdentifier" class="form-control" placeholder="Enter Email, Username, or Enrollment No." required>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
+              <button type="button" class="btn-toggle-password" data-target="loginPassword" aria-label="Toggle password visibility" title="Show Password">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem;">
+            <i class="fa-solid fa-right-to-bracket"></i> Login
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- STUDENT DASHBOARD (POST LOGIN) -->
+  <!-- ========================================================== -->
+  <div class="app-container" id="dashboardContainer" style="display: none;">
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <header>
+        <div class="header-left">
+          <h1>Smart Library System</h1>
+        </div>
+        <div class="header-right" id="headerRightDesktop">
+          <!-- Live Clock -->
+          <div class="live-clock-card">
+            <i class="fa-regular fa-clock"></i>
+            <span id="liveClock">00:00:00 AM</span>
+          </div>
+
+          <!-- Profile Badge dropdown/popup trigger -->
+          <div class="user-profile-badge" id="profileBadge">
+            <div class="user-avatar" id="avatarLetter">S</div>
+            <span id="headerUserName" style="font-weight:600;">Student</span>
+          </div>
+
+          <button class="btn btn-secondary" id="logoutBtn" style="height: 40px; padding: 0 0.85rem;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- ========================================= -->
+      <!-- MOBILE FAB + SLIDE-UP PANEL              -->
+      <!-- ========================================= -->
+      <!-- FAB Button (only visible on mobile) -->
+      <button class="student-mobile-fab" id="studentMobileFab" aria-label="Menu">
+        <i class="fa-solid fa-bars" id="studentFabIcon"></i>
+      </button>
+
+      <!-- Slide-up Panel (backdrop + panel) -->
+      <div class="student-fab-backdrop" id="studentFabBackdrop"></div>
+      <div class="student-fab-panel" id="studentFabPanel">
+        <div class="fab-panel-header">Quick Actions</div>
+
+        <!-- Clock row -->
+        <div class="fab-panel-row">
+          <i class="fa-regular fa-clock" style="color: var(--primary);"></i>
+          <span id="liveClockMobile">00:00:00 AM</span>
+        </div>
+
+        <!-- Profile row -->
+        <div class="fab-panel-row">
+          <div class="user-avatar" id="avatarLetterMobile" style="width:32px;height:32px;font-size:0.85rem;">S</div>
+          <span id="headerUserNameMobile" style="font-weight:600;">Student</span>
+        </div>
+
+        <!-- Logout button -->
+        <button class="btn btn-secondary" id="logoutBtnMobile" style="width:100%; margin-top:0.5rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+
+      <div class="content-body">
+        <div class="student-dashboard-layout">
+          
+          <!-- Column 1a: Location Verification Frame -->
+          <div class="scanner-card" id="locationVerificationCard">
+            <h3 style="font-weight: 700; margin-bottom: 0.5rem; text-align: center;">
+              <i class="fa-solid fa-location-crosshairs" style="color: var(--primary); margin-right: 0.25rem;"></i> Live Location Verification
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
+              For security, please submit your device's live location to unlock the QR entry scanner.
+            </p>
+
+            <!-- Map Iframe Container -->
+            <div id="studentMapContainer" style="display: none; width: 100%; height: 250px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border); margin-bottom: 1.5rem; box-shadow: var(--card-shadow);">
+              <iframe id="studentMapIframe" src="" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+
+            <div class="location-btn-group">
+              <button class="btn btn-primary" id="btnVerifyLocation" style="width: 100%;">
+                <i class="fa-solid fa-location-dot"></i> Share Live Location
+              </button>
+              <button class="btn btn-success" id="btnSubmitLocation" style="width: 100%;">
+                <i class="fa-solid fa-circle-check"></i> Submit Location &amp; Unlock Scanner
+              </button>
+            </div>
+          </div>
+
+          <!-- Column 1b: QR Scanner Frame -->
+          <div class="scanner-card" id="qrScannerCard" style="display: none;">
+            <h3 style="font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Library Entry/Exit Scanner</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
+              Point your camera at the library's QR code to record your visit.
+            </p>
+
+            <div class="scanner-viewfinder" style="position: relative; overflow: hidden; touch-action: none;">
+              <div id="reader"></div>
+              <div class="scan-overlay" id="scanOverlay">
+                <div class="scan-target">
+                  <div class="scan-laser"></div>
+                </div>
+              </div>
+
+              <!-- Zoom Controls overlay -->
+              <div id="zoomControls" style="display: none; position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); padding: 6px 16px; border-radius: 24px; align-items: center; gap: 16px; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                <button id="zoomOutBtn" style="background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; outline: none;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='none'"><i class="fa-solid fa-minus"></i></button>
+                <span id="zoomLevelDisplay" style="font-weight: 700; font-family: monospace; font-size: 1.05rem; min-width: 45px; text-align: center;">1.0x</span>
+                <button id="zoomInBtn" style="background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; outline: none;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='none'"><i class="fa-solid fa-plus"></i></button>
+              </div>
+            </div>
+
+            <div class="scanner-btn-group">
+              <button class="btn btn-primary" id="startScanBtn">
+                <i class="fa-solid fa-camera"></i> Start Scanner
+              </button>
+              <button class="btn btn-secondary" id="stopScanBtn" disabled>
+                <i class="fa-solid fa-video-slash"></i> Stop
+              </button>
+            </div>
+          </div>
+
+          <!-- Column 2: Student Profile Card & Active Status -->
+          <div class="student-card">
+            <div class="student-avatar-large" id="profileAvatar">S</div>
+            <h2 id="profileName" style="font-weight: 800; font-size: 1.5rem; margin-bottom: 0.25rem;">Student Name</h2>
+            <p id="profileEmail" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">email@college.edu</p>
+
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div id="activeSessionIndicator" class="badge badge-info" style="display: flex; align-items: center; justify-content: center; padding: 0.75rem; font-size: 0.85rem; border-radius: 12px; width: 100%;">
+                <span class="badge-dot"></span> Status: Checking connection...
+              </div>
+            </div>
+
+            <div class="student-info-grid">
+              <div class="student-info-item">
+                <span>Enrollment No</span>
+                <span id="profileEnrollment">-</span>
+              </div>
+              <div class="student-info-item">
+                <span>Mobile</span>
+                <span id="profileMobile">-</span>
+              </div>
+              <div class="student-info-item">
+                <span>Department</span>
+                <span id="profileDepartment">-</span>
+              </div>
+              <div class="student-info-item">
+                <span>Course & Sem</span>
+                <span id="profileCourseSem">-</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Student Portal Footer -->
+        <footer style="margin-top: 3rem; padding: 1.5rem 0.5rem 1rem 0.5rem; text-align: center; border-top: 1px solid var(--card-border); color: var(--text-muted); font-size: 0.85rem; line-height: 1.6;">
+          <p style="font-weight: 600; margin-bottom: 0.35rem; color: var(--text-color); font-size: 0.95rem;">&copy; 2026 Smart Library Entry & Exit System.</p>
+          <p style="margin: 0; font-size: 0.9rem;">This Module is Build, Designed, and Devloped by <span style="color: var(--primary, #6366f1); font-weight: 700;">Jadav Dashrath</span>, <span style="color: var(--primary, #6366f1); font-weight: 700;">Dabhi Prit</span>, and <span style="color: var(--primary, #6366f1); font-weight: 700;">Chachcha Madhav</span></p>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-side App JavaScript -->
+  <script src="js/app.js?v=3.5"></script>
+  
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        for (let key of keys) {
+          caches.delete(key);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "outputDirectory": "public",
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/api",
@@ -14,12 +16,12 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/",
-      "destination": "/frontend/index.html"
+      "source": "/admin",
+      "destination": "/admin.html"
     },
     {
-      "source": "/(.*)",
-      "destination": "/frontend/$1"
+      "source": "/student",
+      "destination": "/student.html"
     }
   ],
   "headers": [
