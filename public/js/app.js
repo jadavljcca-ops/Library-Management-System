@@ -682,7 +682,7 @@ function requestStudentLocation() {
         html: `
           <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
             <p>મોબાઇલ બ્રાઉઝર્સ માત્ર <strong>HTTPS (Secure)</strong> કનેક્શન પર જ Location Access ની મંજૂરી આપે છે.</p>
-            <p style="margin-top: 8px;">કૃપા કરીને આ સાઇટને <strong>Render Live URL (https://...)</strong> પર ઓપન કરો.</p>
+            <p style="margin-top: 8px;">કૃપા કરીને આ સાઇટને <strong>Live Secure URL (https://...)</strong> પર ઓપન કરો.</p>
           </div>
         `,
         confirmButtonColor: '#4f46e5'
