@@ -105,12 +105,20 @@
     <!-- Login Form Panel -->
     <div class="auth-panel-form">
       <div class="auth-top-nav">
-        <a href="index.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;">
-          <i class="fa-solid fa-house"></i> Home
+        <a href="index.html" class="btn btn-secondary" style="height: 40px; padding: 0 1rem; font-size: 0.85rem;" title="Back to Landing Page">
+          <i class="fa-solid fa-arrow-left"></i> Home
         </a>
       </div>
 
       <div class="auth-form-card">
+        <!-- Back Arrow Button to Landing Page -->
+        <div style="margin-bottom: 1.25rem;">
+          <a href="index.html" class="login-back-arrow-btn" title="Back to Landing Page" aria-label="Back to Landing Page">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Home</span>
+          </a>
+        </div>
+
         <div class="auth-form-header">
           <h3>Welcome to Library System</h3>
           <p>Login with your Admin or Student credentials</p>
@@ -188,7 +196,6 @@
         <button class="btn btn-secondary" id="adminLogoutBtn" style="width: 100%; text-align: left; justify-content: flex-start; color: var(--danger);">
           <i class="fa-solid fa-right-from-bracket"></i> Logout
         </button>
-        <div class="sidebar-bottom-spacer" style="height: 50px; flex-shrink: 0;"></div>
       </div>
     </aside>
 
