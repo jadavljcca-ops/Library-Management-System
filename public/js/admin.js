@@ -1420,6 +1420,10 @@ async function loadAdminProfile() {
       if (adminProfileName) {
         adminProfileName.textContent = data.admin.name || 'Library Admin';
       }
+      const adminProfileUsername = document.getElementById('adminProfileUsername');
+      if (adminProfileUsername) {
+        adminProfileUsername.textContent = data.admin.username ? `@${data.admin.username}` : '';
+      }
       const adminAvatar = document.getElementById('adminAvatar');
       if (adminAvatar && data.admin.name) {
         adminAvatar.textContent = data.admin.name.trim().charAt(0).toUpperCase();
@@ -1446,23 +1450,39 @@ if (adminProfileForm) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name, email, username })
+        body: JSON.stringify({ name, email, username, userId: username })
       });
       const data = await res.json();
 
       if (res.ok && data.success) {
+        if (data.token) {
+          token = data.token;
+          localStorage.setItem('admin_token', token);
+        }
         if (adminProfileName) {
           adminProfileName.textContent = data.admin.name;
+        }
+        const adminProfileUsername = document.getElementById('adminProfileUsername');
+        if (adminProfileUsername) {
+          adminProfileUsername.textContent = data.admin.username ? `@${data.admin.username}` : '';
         }
         const adminAvatar = document.getElementById('adminAvatar');
         if (adminAvatar && data.admin.name) {
           adminAvatar.textContent = data.admin.name.trim().charAt(0).toUpperCase();
         }
+
+        const nameInput = document.getElementById('adminSettingsName');
+        const emailInput = document.getElementById('adminSettingsEmail');
+        const usernameInput = document.getElementById('adminSettingsUsername');
+        if (nameInput) nameInput.value = data.admin.name || '';
+        if (emailInput) emailInput.value = data.admin.email || '';
+        if (usernameInput) usernameInput.value = data.admin.username || '';
+
         if (typeof Swal !== 'undefined') {
           Swal.fire({
             icon: 'success',
             title: 'Profile Updated! ✨',
-            text: data.message || 'Admin profile saved successfully.',
+            text: data.message || 'Admin User ID and Username saved successfully.',
             timer: 3000,
             timerProgressBar: true,
             confirmButtonColor: '#6366f1'

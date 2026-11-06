@@ -444,7 +444,11 @@ app.post('/api/auth/login', async (req, res) => {
 // Admin Profile APIs (Get and Update Admin Profile Settings)
 app.get('/api/admin/profile', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const result = await db.query('SELECT id, name, email, username FROM admins WHERE id = ?', [req.user.id]);
+    let result = await db.query('SELECT id, name, email, username FROM admins WHERE id = ?', [req.user.id]);
+    if (result.rows.length === 0) {
+      // Fallback to primary admin
+      result = await db.query('SELECT id, name, email, username FROM admins ORDER BY id ASC LIMIT 1');
+    }
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Admin account not found.' });
     }
@@ -456,36 +460,68 @@ app.get('/api/admin/profile', authenticateToken, requireAdmin, async (req, res) 
 });
 
 app.put('/api/admin/profile', authenticateToken, requireAdmin, async (req, res) => {
-  const { name, email, username } = req.body;
-
-  if (!name || !email) {
-    return res.status(400).json({ success: false, message: 'Name and Email are required.' });
-  }
-
-  const cleanName = String(name).trim();
-  const cleanEmail = String(email).trim().toLowerCase();
-  const cleanUsername = username ? String(username).trim() : cleanEmail;
+  const { name, email, username, userId } = req.body;
+  const rawUsername = username || userId;
 
   try {
+    let adminResult = await db.query('SELECT id, name, email, username FROM admins WHERE id = ?', [req.user.id]);
+    if (adminResult.rows.length === 0) {
+      adminResult = await db.query('SELECT id, name, email, username FROM admins ORDER BY id ASC LIMIT 1');
+    }
+    if (adminResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+    const currentAdmin = adminResult.rows[0];
+    const targetAdminId = currentAdmin.id;
+
+    const cleanName = name ? String(name).trim() : currentAdmin.name;
+    const cleanEmail = email ? String(email).trim().toLowerCase() : currentAdmin.email;
+    const cleanUsername = rawUsername ? String(rawUsername).trim() : (currentAdmin.username || cleanEmail);
+
+    if (!cleanName) {
+      return res.status(400).json({ success: false, message: 'Admin name cannot be empty.' });
+    }
+    if (!cleanUsername) {
+      return res.status(400).json({ success: false, message: 'Admin User ID / Username cannot be empty.' });
+    }
+
+    // Clean up any stale duplicate default admin seeds that conflict with this update
+    // (stale seeds from previous versions: 'admin', 'admin@ljcca.edu', 'admin@lj.edu', 'admin@library.com')
+    await db.query(
+      `DELETE FROM admins 
+       WHERE (LOWER(TRIM(email)) = ? OR LOWER(TRIM(username)) = ?) 
+         AND id != ? 
+         AND (LOWER(TRIM(username)) IN ('admin', 'admin@ljcca.edu', 'admin@lj.edu') 
+              OR LOWER(TRIM(email)) IN ('admin@library.com', 'admin@ljcca.edu', 'admin@lj.edu'))`,
+      [cleanEmail, cleanUsername.toLowerCase(), targetAdminId]
+    );
+
     // Check if another admin already uses this email or username
     const duplicateCheck = await db.query(
-      'SELECT id FROM admins WHERE (email = ? OR username = ?) AND id != ?',
-      [cleanEmail, cleanUsername, req.user.id]
+      'SELECT id FROM admins WHERE (LOWER(TRIM(email)) = ? OR LOWER(TRIM(username)) = ?) AND id != ?',
+      [cleanEmail, cleanUsername.toLowerCase(), targetAdminId]
     );
 
     if (duplicateCheck.rows.length > 0) {
-      return res.status(400).json({ success: false, message: 'Email or Username is already used by another admin.' });
+      return res.status(400).json({ success: false, message: 'This User ID / Username or Email is already used by another admin.' });
     }
 
     await db.query(
       'UPDATE admins SET name = ?, email = ?, username = ? WHERE id = ?',
-      [cleanName, cleanEmail, cleanUsername, req.user.id]
+      [cleanName, cleanEmail, cleanUsername, targetAdminId]
+    );
+
+    const newToken = jwt.sign(
+      { id: targetAdminId, name: cleanName, username: cleanUsername, email: cleanEmail, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: '1d' }
     );
 
     res.json({
       success: true,
-      message: 'Admin profile updated successfully!',
-      admin: { id: req.user.id, name: cleanName, email: cleanEmail, username: cleanUsername }
+      message: 'Admin User ID and Username saved successfully!',
+      token: newToken,
+      admin: { id: targetAdminId, name: cleanName, email: cleanEmail, username: cleanUsername }
     });
   } catch (error) {
     console.error('Update admin profile error:', error);

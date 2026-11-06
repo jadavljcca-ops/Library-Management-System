@@ -385,7 +385,7 @@ async function initDatabase() {
 async function seedAdmin() {
   try {
     const adminUsername = process.env.ADMIN_USERNAME || 'admin@lj.edu';
-    const result = await query('SELECT * FROM admins WHERE username = ?', [adminUsername]);
+    const result = await query('SELECT id FROM admins LIMIT 1');
     
     if (result.rows.length === 0) {
       console.log('Seeding default admin account...');

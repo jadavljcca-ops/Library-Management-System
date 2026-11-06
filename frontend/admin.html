@@ -181,6 +181,7 @@
           <div class="user-avatar" id="adminAvatar" style="background: var(--info);">L</div>
           <div class="sidebar-user-details">
             <span id="adminProfileName" style="font-weight: 600;">Library Admin</span>
+            <span id="adminProfileUsername" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">@admin</span>
             <span class="user-role-tag">Administrator</span>
           </div>
         </div>
@@ -673,21 +674,24 @@
         </h5>
         
         <div class="form-group">
-          <label for="adminSettingsName">Admin Full Name</label>
+          <label for="adminSettingsUsername"><i class="fa-solid fa-user-tag" style="color: var(--primary); margin-right: 0.25rem;"></i> Admin User ID / Username (Login ID)</label>
+          <input type="text" id="adminSettingsUsername" class="form-control" placeholder="e.g. admin or admin@lj.edu" required autocomplete="username">
+          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Use this User ID / Username to log in to the admin panel.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="adminSettingsName"><i class="fa-solid fa-user" style="color: var(--primary); margin-right: 0.25rem;"></i> Admin Full Name / Display Name</label>
           <input type="text" id="adminSettingsName" class="form-control" placeholder="e.g. Library Admin" required>
+          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Display name shown on your dashboard and sidebar.</small>
         </div>
 
         <div class="form-group">
-          <label for="adminSettingsEmail">Admin Email ID</label>
-          <input type="email" id="adminSettingsEmail" class="form-control" placeholder="e.g. admin@lj.edu" required>
+          <label for="adminSettingsEmail"><i class="fa-solid fa-envelope" style="color: var(--primary); margin-right: 0.25rem;"></i> Admin Email ID</label>
+          <input type="email" id="adminSettingsEmail" class="form-control" placeholder="e.g. admin@lj.edu" required autocomplete="email">
+          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Official email address for admin login & notifications.</small>
         </div>
 
-        <div class="form-group">
-          <label for="adminSettingsUsername">Admin Username</label>
-          <input type="text" id="adminSettingsUsername" class="form-control" placeholder="e.g. admin" required>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
           <button type="submit" class="btn btn-primary" id="saveAdminProfileBtn">
             <i class="fa-solid fa-floppy-disk"></i> Save Profile Details
           </button>
