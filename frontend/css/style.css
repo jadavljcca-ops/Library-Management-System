@@ -351,11 +351,11 @@ header {
   margin: 0 auto;
 }
 
-/* Stat Cards */
+/* Stat Cards - 4 cards in 1 row */
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1.25rem;
   margin-bottom: 2rem;
   width: 100%;
 }
@@ -1515,8 +1515,59 @@ tr:hover td {
     font-size: 16px !important;
   }
 
-  /* Cards stack strictly vertically (1 column, up-down) with zero horizontal overflow */
-  .stats-grid,
+  /* Admin Dashboard 4 cards in 1 row across all screen sizes */
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .stats-grid .stat-card {
+    padding: 0.75rem 0.5rem !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+    gap: 0.35rem !important;
+    min-width: 0 !important;
+  }
+
+  .stats-grid .stat-info {
+    align-items: center !important;
+    text-align: center !important;
+    gap: 0.15rem !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .stats-grid .stat-label {
+    font-size: 0.68rem !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+    text-align: center !important;
+    word-break: normal !important;
+    font-weight: 700 !important;
+  }
+
+  .stats-grid .stat-value {
+    font-size: 1.55rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+
+  .stats-grid .stat-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.95rem !important;
+    border-radius: 8px !important;
+    margin-left: 0 !important;
+    order: -1 !important;
+  }
+
+  /* Other sections stack vertically on mobile */
   .stats-grid-split,
   .charts-grid,
   .charts-grid-equal {
@@ -1526,7 +1577,6 @@ tr:hover td {
     max-width: 100% !important;
   }
 
-  .stat-card,
   .chart-card,
   .report-section {
     width: 100% !important;
@@ -1735,6 +1785,27 @@ tr:hover td {
     font-size: 0.82rem !important;
     justify-content: center !important;
     white-space: nowrap !important;
+  }
+
+  /* Admin Dashboard 4 cards in 1 row on tiny mobile screens */
+  .stats-grid {
+    gap: 0.35rem !important;
+  }
+  .stats-grid .stat-card {
+    padding: 0.55rem 0.25rem !important;
+    border-radius: 10px !important;
+  }
+  .stats-grid .stat-label {
+    font-size: 0.58rem !important;
+    letter-spacing: 0px !important;
+  }
+  .stats-grid .stat-value {
+    font-size: 1.35rem !important;
+  }
+  .stats-grid .stat-icon {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.8rem !important;
   }
 
   /* Student portal: tighten further on very small phones */
