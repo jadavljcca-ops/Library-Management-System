@@ -1300,13 +1300,15 @@ if (menuStudentsBtn) {
 // SECURITY LOGIN & SESSION RULES
 // ==========================================
 function showAuthScreen() {
-  adminAuthContainer.style.display = 'flex';
-  adminDashboardContainer.style.display = 'none';
+  document.documentElement.classList.remove('is-admin-logged-in');
+  if (adminAuthContainer) adminAuthContainer.style.display = 'flex';
+  if (adminDashboardContainer) adminDashboardContainer.style.display = 'none';
 }
 
 function showDashboardScreen() {
-  adminAuthContainer.style.display = 'none';
-  adminDashboardContainer.style.display = 'flex';
+  document.documentElement.classList.add('is-admin-logged-in');
+  if (adminAuthContainer) adminAuthContainer.style.display = 'none';
+  if (adminDashboardContainer) adminDashboardContainer.style.display = 'flex';
   startClock();
   fetchDashboardStats();
   loadAdminProfile();
@@ -1354,6 +1356,8 @@ adminLoginForm.addEventListener('submit', async (e) => {
       if (data.role === 'admin') {
         token = data.token;
         localStorage.setItem('admin_token', token);
+        localStorage.removeItem('student_token');
+        document.documentElement.classList.add('is-admin-logged-in');
         adminLoginForm.reset();
         showCustomLoginPopup(true, 'Welcome Admin!', () => {
           showDashboardScreen();
@@ -1362,6 +1366,7 @@ adminLoginForm.addEventListener('submit', async (e) => {
       } else if (data.role === 'student') {
         // Student logged in through admin screen -> Redirect to student portal
         localStorage.setItem('student_token', data.token);
+        localStorage.removeItem('admin_token');
         adminLoginForm.reset();
         showCustomLoginPopup(true, 'Welcome Student!', () => {
           window.location.href = 'student.html';
@@ -1394,6 +1399,7 @@ function logout() {
   }
   token = null;
   localStorage.removeItem('admin_token');
+  document.documentElement.classList.remove('is-admin-logged-in');
   showAuthScreen();
   showToast('Admin session terminated.', 'info');
 }
@@ -1689,6 +1695,21 @@ function printQRCode(canvasId = 'adminQRCanvas') {
 function initAdminApp() {
   initTheme();
 
+  // Authentication check & screen routing (Top Priority)
+  token = localStorage.getItem('admin_token') || null;
+  const studentToken = localStorage.getItem('student_token');
+
+  if (token) {
+    document.documentElement.classList.add('is-admin-logged-in');
+    showDashboardScreen();
+  } else if (studentToken) {
+    window.location.replace('student.html');
+    return;
+  } else {
+    document.documentElement.classList.remove('is-admin-logged-in');
+    showAuthScreen();
+  }
+
   // Read active QR configuration from HTML or process.env
   const configQR = document.getElementById('activeQRConfig');
   if (configQR && typeof process !== 'undefined' && process.env) {
@@ -1871,13 +1892,6 @@ function initAdminApp() {
         renderStudentsDbTable();
       }
     });
-  }
-
-  // Initial authentication check & screen routing
-  if (token) {
-    showDashboardScreen();
-  } else {
-    showAuthScreen();
   }
 }
 

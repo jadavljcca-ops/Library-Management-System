@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFaqAccordion();
   setupContactForm();
   setupMobileDrawer();
+  setupAuthAwarePortalLinks();
 });
 
 // ==========================================
@@ -251,5 +252,59 @@ function setupMobileDrawer() {
 
   drawerLinks.forEach(link => {
     link.addEventListener('click', closeDrawer);
+  });
+}
+
+// ==========================================
+// AUTH-AWARE PORTAL NAVIGATION
+// ==========================================
+function setupAuthAwarePortalLinks() {
+  const adminToken = localStorage.getItem('admin_token');
+  const studentToken = localStorage.getItem('student_token');
+
+  if (adminToken || studentToken) {
+    const targetUrl = adminToken ? 'admin.html' : 'student.html';
+    const label = 'Dashboard';
+
+    const navBtnDesktop = document.getElementById('navLoginBtnDesktop');
+    if (navBtnDesktop) {
+      navBtnDesktop.href = targetUrl;
+      navBtnDesktop.innerHTML = `<i class="fa-solid fa-gauge"></i> ${label}`;
+    }
+
+    const navBtnMobile = document.getElementById('navLoginBtnMobile');
+    if (navBtnMobile) {
+      navBtnMobile.href = targetUrl;
+      navBtnMobile.innerHTML = `<i class="fa-solid fa-gauge"></i> ${label}`;
+    }
+
+    const heroBtn = document.getElementById('heroGetStartedBtn');
+    if (heroBtn) {
+      heroBtn.href = targetUrl;
+      heroBtn.innerHTML = `<i class="fa-solid fa-gauge"></i> Go to Dashboard`;
+    }
+
+    const footerLink = document.getElementById('footerLoginLink');
+    if (footerLink) {
+      footerLink.href = targetUrl;
+      footerLink.innerHTML = `<i class="fa-solid fa-gauge"></i> Dashboard`;
+    }
+  }
+
+  // Intercept any portal link clicks to guarantee immediate dashboard routing if logged in
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href*="student.html"], a[href*="admin.html"]');
+    if (!link) return;
+
+    const currentAdminToken = localStorage.getItem('admin_token');
+    const currentStudentToken = localStorage.getItem('student_token');
+
+    if (currentAdminToken) {
+      e.preventDefault();
+      window.location.href = 'admin.html';
+    } else if (currentStudentToken) {
+      e.preventDefault();
+      window.location.href = 'student.html';
+    }
   });
 }

@@ -20,6 +20,28 @@
   <!-- CSS Styles -->
   <link rel="stylesheet" href="css/style.css?v=3.5">
   
+  <script>
+    (function() {
+      try {
+        var adminToken = localStorage.getItem('admin_token');
+        var studentToken = localStorage.getItem('student_token');
+        if (adminToken) {
+          document.documentElement.classList.add('is-admin-logged-in');
+        } else if (studentToken) {
+          window.location.replace('student.html');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    html.is-admin-logged-in #adminAuthContainer {
+      display: none !important;
+    }
+    html.is-admin-logged-in #adminDashboardContainer {
+      display: flex !important;
+    }
+  </style>
+  
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   

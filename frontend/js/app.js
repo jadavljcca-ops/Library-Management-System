@@ -7,9 +7,15 @@ const BACKEND_URL = '';
 
 function getApiBaseUrl() {
   if (BACKEND_URL) return BACKEND_URL.replace(/\/$/, '');
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const hostname = window.location.hostname;
+  const isLocal = hostname === 'localhost' || 
+                  hostname === '127.0.0.1' || 
+                  hostname === '[::1]' ||
+                  /^192\.168\./.test(hostname) || 
+                  /^10\./.test(hostname) || 
+                  /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname);
   if (isLocal) {
-    return window.location.port === '5000' ? '' : `http://${window.location.hostname}:5000`;
+    return window.location.port === '5000' ? '' : `http://${hostname}:5000`;
   }
   if (window.location.protocol === 'file:') {
     return 'http://localhost:5000';
@@ -626,6 +632,7 @@ stopScanBtn.addEventListener('click', stopCameraScanner);
 
 // Screen Toggles
 function showAuthScreen(screen) {
+  document.documentElement.classList.remove('is-student-logged-in');
   if (authContainer) authContainer.style.display = 'flex';
   if (dashboardContainer) dashboardContainer.style.display = 'none';
   if (screen === 'register') {
@@ -638,8 +645,9 @@ function showAuthScreen(screen) {
 }
 
 function showDashboardScreen() {
-  authContainer.style.display = 'none';
-  dashboardContainer.style.display = 'flex';
+  document.documentElement.classList.add('is-student-logged-in');
+  if (authContainer) authContainer.style.display = 'none';
+  if (dashboardContainer) dashboardContainer.style.display = 'flex';
   startClock();
   fetchProfile();
 
@@ -896,6 +904,8 @@ loginForm.addEventListener('submit', async (e) => {
       if (data.role === 'student') {
         token = data.token;
         localStorage.setItem('student_token', token);
+        localStorage.removeItem('admin_token');
+        document.documentElement.classList.add('is-student-logged-in');
         loginForm.reset();
         showCustomLoginPopup(true, 'Welcome Student!', () => {
           showDashboardScreen();
@@ -903,6 +913,7 @@ loginForm.addEventListener('submit', async (e) => {
       } else if (data.role === 'admin') {
         // Admin logged in through student portal -> Redirect to admin portal
         localStorage.setItem('admin_token', data.token);
+        localStorage.removeItem('student_token');
         loginForm.reset();
         showCustomLoginPopup(true, 'Welcome Admin!', () => {
           window.location.href = 'admin.html';
@@ -986,6 +997,7 @@ function logout() {
   tempCoords = null;
   submitLocationClickCount = 0;
   localStorage.removeItem('student_token');
+  document.documentElement.classList.remove('is-student-logged-in');
   showAuthScreen('login');
   showToast('Logged out successfully.', 'info');
 }
@@ -997,11 +1009,19 @@ logoutBtn.addEventListener('click', logout);
 // App Launch
 window.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  const urlParams = new URLSearchParams(window.location.search);
-  const forceLogin = urlParams.get('mode') === 'login' || urlParams.get('auth') === 'login';
-  if (token && !forceLogin) {
+  const adminToken = localStorage.getItem('admin_token');
+  token = localStorage.getItem('student_token') || null;
+
+  if (adminToken && !token) {
+    window.location.replace('admin.html');
+    return;
+  }
+
+  if (token) {
+    document.documentElement.classList.add('is-student-logged-in');
     showDashboardScreen();
   } else {
+    document.documentElement.classList.remove('is-student-logged-in');
     showAuthScreen('login');
   }
 });
