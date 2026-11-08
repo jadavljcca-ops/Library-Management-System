@@ -1325,6 +1325,11 @@ adminLoginForm.addEventListener('submit', async (e) => {
   const usernameOrEnrollment = (document.getElementById('adminUsername').value || '').trim();
   const password = (document.getElementById('adminPassword').value || '').trim();
 
+  if (password.length < 10 && password !== 'admin123') {
+    showCustomLoginPopup(false, 'Password must be exactly 10 digits/numbers.');
+    return;
+  }
+
   showLoader(true);
   try {
     const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -2334,10 +2339,10 @@ function showCustomLoginPopup(isSuccess, message, callback) {
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
 
-  // Show party poppers cross visual effect if success
+  // Show party poppers cross visual effect if success (1 second duration)
   if (isSuccess) {
     const triggerConfetti = () => {
-      var duration = 2000;
+      var duration = 1000;
       var end = Date.now() + duration;
 
       (function frame() {
@@ -2376,11 +2381,11 @@ function showCustomLoginPopup(isSuccess, message, callback) {
     }
   }
 
-  // Remove after 3 seconds
+  // Remove after 1 second (1000ms)
   setTimeout(() => {
     overlay.remove();
     if (callback) callback();
-  }, 3000);
+  }, 1000);
 }
 
 // ==========================================

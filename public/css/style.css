@@ -688,7 +688,8 @@ header {
 .btn-group {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 /* Action section for exports */
@@ -698,7 +699,8 @@ header {
   align-items: center;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 /* Responsive Table */
@@ -1581,10 +1583,25 @@ tr:hover td {
     display: none; /* Hide decorative info panel on small screens */
   }
   
+  .auth-wrapper {
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
   .auth-panel-form {
-    padding: 1.5rem;
-    flex-direction: column;
-    justify-content: flex-start;
+    padding: 1.25rem 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    box-sizing: border-box !important;
   }
   
   .auth-top-nav {
@@ -1642,19 +1659,46 @@ tr:hover td {
   }
 
   .live-clock-card span {
-    display: none; /* Icon-only clock to save header space */
+    display: inline-block !important; /* Show time in header on mobile */
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
   }
 
   .live-clock-card {
-    padding: 0.45rem !important;
-    border-radius: 50% !important;
-    width: 36px !important;
-    height: 36px !important;
-    justify-content: center !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: 20px !important;
+    width: auto !important;
+    height: auto !important;
+    gap: 0.35rem !important;
   }
 
   #headerUserName {
     display: none; /* Show avatar circle only */
+  }
+
+  /* Attendance reports toolbar wrapping for mobile so no buttons cut off */
+  .report-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+  }
+
+  .report-actions .btn-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 0.45rem !important;
+  }
+
+  .report-actions .btn-group .btn {
+    flex: 1 1 calc(50% - 0.5rem) !important;
+    min-width: 95px !important;
+    padding: 0.55rem 0.65rem !important;
+    font-size: 0.82rem !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
   }
 
   /* Student portal: tighten further on very small phones */
@@ -1688,12 +1732,18 @@ tr:hover td {
   }
 
   .auth-panel-form {
-    padding: 1rem !important;
+    padding: 0.75rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100dvh !important;
   }
 
   .auth-form-card {
     padding: 1.25rem 1rem !important;
     border-radius: 14px !important;
+    margin: auto 0 !important;
   }
 
   .auth-top-nav .btn {
