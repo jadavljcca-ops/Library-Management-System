@@ -563,12 +563,13 @@ header {
   padding: 1.5rem;
 }
 
-/* Search Filters Form */
+/* Search Filters Form - strictly 3 text boxes per row */
 .filter-bar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 .filter-group {
@@ -1707,10 +1708,28 @@ tr:hover td {
     gap: 0;
   }
 
-  /* Filters, Search & Tables */
+  /* Filters, Search & Tables - strictly 3 text boxes per row */
   .filter-bar {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  .filter-group {
+    min-width: 0 !important;
+  }
+
+  .filter-group label {
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .filter-group .form-control {
+    font-size: 0.85rem !important;
+    padding: 0.4rem 0.5rem !important;
+    height: 40px !important;
   }
 
   .table-wrapper {
@@ -1806,6 +1825,20 @@ tr:hover td {
     width: 26px !important;
     height: 26px !important;
     font-size: 0.8rem !important;
+  }
+
+  .filter-bar {
+    gap: 0.35rem !important;
+  }
+
+  .filter-group label {
+    font-size: 0.65rem !important;
+  }
+
+  .filter-group .form-control {
+    font-size: 0.78rem !important;
+    padding: 0.35rem 0.4rem !important;
+    height: 36px !important;
   }
 
   /* Student portal: tighten further on very small phones */

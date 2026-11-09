@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Admin Portal - Smart Library System</title>
-  
+
   <!-- PWA Manifest & Icons -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="logo.png">
@@ -18,10 +19,10 @@
   <meta http-equiv="Expires" content="0">
 
   <!-- CSS Styles -->
-  <link rel="stylesheet" href="css/style.css?v=3.5">
-  
+  <link rel="stylesheet" href="css/style.css?v=4.0">
+
   <script>
-    (function() {
+    (function () {
       try {
         var adminToken = localStorage.getItem('admin_token');
         var studentToken = localStorage.getItem('student_token');
@@ -30,21 +31,22 @@
         } else if (studentToken) {
           window.location.replace('student.html');
         }
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
   <style>
     html.is-admin-logged-in #adminAuthContainer {
       display: none !important;
     }
+
     html.is-admin-logged-in #adminDashboardContainer {
       display: flex !important;
     }
   </style>
-  
+
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -60,7 +62,7 @@
 
   <!-- SweetAlert2 Library -->
   <script src="js/sweetalert2.all.min.js"></script>
-  
+
   <style>
     .preview-table-input {
       width: 100%;
@@ -73,21 +75,25 @@
       color: var(--text-color);
       transition: all 0.2s;
     }
+
     .preview-table-input:hover {
       border-color: var(--card-border);
       background: rgba(0, 0, 0, 0.02);
     }
+
     .preview-table-input:focus {
       border-color: var(--primary);
       background: var(--input-bg);
       outline: none;
       box-shadow: 0 0 0 2px var(--primary-glow);
     }
+
     [data-theme="dark"] .preview-table-input:hover {
       background: rgba(255, 255, 255, 0.02);
     }
   </style>
 </head>
+
 <body>
 
   <!-- LOADING ANIMATION OVERLAY -->
@@ -130,7 +136,8 @@
       <div class="auth-form-card">
         <!-- Back Arrow Button to Landing Page -->
         <div style="margin-bottom: 1.25rem;">
-          <a href="index.html" class="login-back-arrow-btn" title="Back to Landing Page" aria-label="Back to Landing Page">
+          <a href="index.html" class="login-back-arrow-btn" title="Back to Landing Page"
+            aria-label="Back to Landing Page">
             <i class="fa-solid fa-arrow-left"></i>
             <span>Back to Home</span>
           </a>
@@ -139,22 +146,25 @@
         <div class="auth-form-header">
           <h3>Welcome to Library System</h3>
         </div>
-        
+
         <form id="adminLoginForm">
           <div class="form-group">
             <label for="adminUsername">Username / Email / Enrollment No.</label>
-            <input type="text" id="adminUsername" class="form-control" placeholder="Enter Username, Email, or Enrollment No." required>
+            <input type="text" id="adminUsername" class="form-control"
+              placeholder="Enter Username, Email, or Enrollment No." required>
           </div>
           <div class="form-group">
             <label for="adminPassword">Password</label>
             <div class="password-input-wrapper">
-              <input type="password" id="adminPassword" class="form-control" placeholder="Enter your password" maxlength="10" required>
-              <button type="button" class="btn-toggle-password" data-target="adminPassword" aria-label="Toggle password visibility" title="Show Password">
+              <input type="password" id="adminPassword" class="form-control" placeholder="Enter your password"
+                maxlength="10" required>
+              <button type="button" class="btn-toggle-password" data-target="adminPassword"
+                aria-label="Toggle password visibility" title="Show Password">
                 <i class="fa-solid fa-eye"></i>
               </button>
             </div>
           </div>
-          
+
           <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
             <i class="fa-solid fa-right-to-bracket"></i> Login
           </button>
@@ -167,7 +177,7 @@
   <!-- ADMIN PORTAL WRAPPER (POST LOGIN) -->
   <!-- ========================================================== -->
   <div class="app-container" id="adminDashboardContainer" style="display: none;">
-    
+
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="adminSidebar">
       <div class="brand-section">
@@ -182,7 +192,7 @@
         </button>
       </div>
 
-      
+
 
       <ul class="sidebar-menu">
         <li class="menu-item active" id="menuDashBtn">
@@ -205,11 +215,13 @@
           <div class="user-avatar" id="adminAvatar" style="background: var(--info);">L</div>
           <div class="sidebar-user-details">
             <span id="adminProfileName" style="font-weight: 600;">Library Admin</span>
-            <span id="adminProfileUsername" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">@admin</span>
+            <span id="adminProfileUsername"
+              style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">@admin</span>
             <span class="user-role-tag">Administrator</span>
           </div>
         </div>
-        <button class="btn btn-secondary" id="adminLogoutBtn" style="width: 100%; text-align: left; justify-content: flex-start; color: var(--danger);">
+        <button class="btn btn-secondary" id="adminLogoutBtn"
+          style="width: 100%; text-align: left; justify-content: flex-start; color: var(--danger);">
           <i class="fa-solid fa-right-from-bracket"></i> Logout
         </button>
       </div>
@@ -225,7 +237,7 @@
 
     <!-- Main Workspace -->
     <div class="main-wrapper">
-      
+
       <!-- Top Header -->
       <header>
         <div class="header-left">
@@ -242,10 +254,10 @@
 
       <!-- Dashboard Scrollable Body -->
       <main class="content-body">
-        
+
         <!-- SECTION 1: CORE STATS & GRAPHS (DASHBOARD) -->
         <div id="sectionDashboard">
-          
+
           <!-- Key Statistics Cards -->
           <div class="stats-grid">
             <div class="stat-card" id="cardTotalStudents">
@@ -301,32 +313,41 @@
           </div>
 
           <!-- Dashboard QR Code Card -->
-          <div class="chart-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.25rem 1.5rem; text-align: center; margin-bottom: 2rem; width: 100%; border-radius: 16px;">
-            <div style="width: 52px; height: 52px; background: rgba(99, 102, 241, 0.12); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.85rem;">
+          <div class="chart-card"
+            style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.25rem 1.5rem; text-align: center; margin-bottom: 2rem; width: 100%; border-radius: 16px;">
+            <div
+              style="width: 52px; height: 52px; background: rgba(99, 102, 241, 0.12); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.85rem;">
               <i class="fa-solid fa-qrcode"></i>
             </div>
             <h3 style="font-weight: 700; margin-bottom: 0.4rem; font-size: 1.3rem;">Library Entry/Exit QR Code</h3>
-            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem; max-width: 460px; line-height: 1.5;">
-              Display or print this QR Code at the library entrance. Students scan this code using their mobile phone to enter and exit.
+            <p
+              style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem; max-width: 460px; line-height: 1.5;">
+              Display or print this QR Code at the library entrance. Students scan this code using their mobile phone to
+              enter and exit.
             </p>
-            
-            <div style="background: #ffffff; padding: 1.15rem; border-radius: 14px; border: 2px solid var(--card-border); display: inline-flex; justify-content: center; align-items: center; margin-bottom: 1.15rem; box-shadow: 0 6px 18px rgba(0,0,0,0.06);">
+
+            <div
+              style="background: #ffffff; padding: 1.15rem; border-radius: 14px; border: 2px solid var(--card-border); display: inline-flex; justify-content: center; align-items: center; margin-bottom: 1.15rem; box-shadow: 0 6px 18px rgba(0,0,0,0.06);">
               <canvas id="dashboardQRCanvas" width="200" height="200"></canvas>
             </div>
 
-            <div style="background: var(--bg-color); border: 1px solid var(--card-border); padding: 0.4rem 1.1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
+            <div
+              style="background: var(--bg-color); border: 1px solid var(--card-border); padding: 0.4rem 1.1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
               QR Value: <code style="color: var(--primary); margin-left: 0.25rem;">SMART_LIBRARY_QR_2026</code>
             </div>
 
             <!-- Download & Print Action Buttons -->
             <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; width: 100%;">
-              <button class="btn btn-primary" id="dashDownloadQRPngBtn" style="height: 40px; font-size: 0.86rem; padding: 0 1.2rem; display: flex; align-items: center; gap: 0.45rem; border-radius: 8px;">
+              <button class="btn btn-primary" id="dashDownloadQRPngBtn"
+                style="height: 40px; font-size: 0.86rem; padding: 0 1.2rem; display: flex; align-items: center; gap: 0.45rem; border-radius: 8px;">
                 <i class="fa-solid fa-file-image"></i> Download .PNG
               </button>
-              <button class="btn btn-primary" id="dashDownloadQRJpgBtn" style="height: 40px; font-size: 0.86rem; padding: 0 1.2rem; display: flex; align-items: center; gap: 0.45rem; background: #059669; border-color: #059669; border-radius: 8px;">
+              <button class="btn btn-primary" id="dashDownloadQRJpgBtn"
+                style="height: 40px; font-size: 0.86rem; padding: 0 1.2rem; display: flex; align-items: center; gap: 0.45rem; background: #059669; border-color: #059669; border-radius: 8px;">
                 <i class="fa-solid fa-image"></i> Download .JPEG
               </button>
-              <button class="btn btn-secondary" id="dashPrintQRBtn" style="height: 40px; font-size: 0.86rem; padding: 0 1.2rem; display: flex; align-items: center; gap: 0.45rem; border-radius: 8px;">
+              <button class="btn btn-secondary" id="dashPrintQRBtn"
+                style="height: 40px; font-size: 0.86rem; padding: 0 1.2rem; display: flex; align-items: center; gap: 0.45rem; border-radius: 8px;">
                 <i class="fa-solid fa-print"></i> Print QR Code
               </button>
             </div>
@@ -334,13 +355,13 @@
 
         </div>
 
-          
+
 
         <!-- SECTION 2: ATTENDANCE RECORDS & DATA SHEET (REPORTS) -->
         <div id="sectionReports" style="display: none;">
-          
+
           <div class="report-section">
-            
+
             <!-- Filters Form -->
             <form id="filtersForm">
               <div class="filter-bar">
@@ -348,7 +369,7 @@
                   <label for="filterSearch">Search student</label>
                   <input type="text" id="filterSearch" class="form-control" placeholder="Name or Enrollment...">
                 </div>
-                
+
                 <div class="filter-group">
                   <label for="filterDepartment">Department</label>
                   <input type="text" id="filterDepartment" class="form-control" placeholder="e.g. Computer Science">
@@ -419,7 +440,8 @@
                 <button class="btn btn-primary" id="exportPdfBtn" style="background-color: var(--danger);">
                   <i class="fa-regular fa-file-pdf"></i> PDF
                 </button>
-                <button class="btn btn-secondary" id="btnClearAttendanceBtn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" title="Delete all attendance logs">
+                <button class="btn btn-secondary" id="btnClearAttendanceBtn"
+                  style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" title="Delete all attendance logs">
                   <i class="fa-solid fa-trash-can"></i> Clear All
                 </button>
               </div>
@@ -459,8 +481,10 @@
             <div class="pagination">
               <span class="page-info" id="tablePageInfo">Showing 0 to 0 of 0 entries</span>
               <div class="btn-group">
-                <button class="btn btn-secondary" id="btnPrevPage" style="height: 36px; padding: 0 0.85rem;"><i class="fa-solid fa-chevron-left"></i> Prev</button>
-                <button class="btn btn-secondary" id="btnNextPage" style="height: 36px; padding: 0 0.85rem;">Next <i class="fa-solid fa-chevron-right"></i></button>
+                <button class="btn btn-secondary" id="btnPrevPage" style="height: 36px; padding: 0 0.85rem;"><i
+                    class="fa-solid fa-chevron-left"></i> Prev</button>
+                <button class="btn btn-secondary" id="btnNextPage" style="height: 36px; padding: 0 0.85rem;">Next <i
+                    class="fa-solid fa-chevron-right"></i></button>
               </div>
             </div>
 
@@ -470,43 +494,54 @@
 
         <!-- SECTION 3: STUDENTS DATABASE & FILE UPLOAD -->
         <div id="sectionStudents" style="display: none;">
-          
+
           <div class="stats-grid-split">
             <!-- File Import Card -->
-            <div class="chart-card" style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="chart-card"
+              style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
               <div>
                 <h3 style="font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
                   <i class="fa-solid fa-file-import" style="color: var(--primary);"></i> Bulk Import Students
                 </h3>
                 <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
-                  Upload a CSV, Excel (`.xlsx`, `.xls`), or JSON file to import students. Ensure the file contains columns: 
-                  <code>name</code>, <code>enrollment_no</code>, <code>email</code>, <code>mobile</code>, <code>department</code>, <code>course</code>, <code>semester</code>, <code>gender</code>.
+                  Upload a CSV, Excel (`.xlsx`, `.xls`), or JSON file to import students. Ensure the file contains
+                  columns:
+                  <code>name</code>, <code>enrollment_no</code>, <code>email</code>, <code>mobile</code>,
+                  <code>department</code>, <code>course</code>, <code>semester</code>, <code>gender</code>.
                 </p>
-                
+
                 <!-- Custom File Upload Drag & Drop Area -->
-                <div id="importDragArea" style="border: 2px dashed var(--input-border); border-radius: 12px; padding: 2rem; text-align: center; background: rgba(0,0,0,0.02); cursor: pointer; transition: all var(--transition-speed);">
-                  <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
-                  <p style="font-weight: 600; margin-bottom: 0.25rem; color: var(--text-color);">Drag & drop your file here or click to browse</p>
+                <div id="importDragArea"
+                  style="border: 2px dashed var(--input-border); border-radius: 12px; padding: 2rem; text-align: center; background: rgba(0,0,0,0.02); cursor: pointer; transition: all var(--transition-speed);">
+                  <i class="fa-solid fa-cloud-arrow-up"
+                    style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                  <p style="font-weight: 600; margin-bottom: 0.25rem; color: var(--text-color);">Drag & drop your file
+                    here or click to browse</p>
                   <p style="font-size: 0.75rem; color: var(--text-muted);">Supports CSV, XLSX, XLS, JSON</p>
                   <input type="file" id="studentsImportFile" accept=".csv, .xlsx, .xls, .json" style="display: none;">
                 </div>
-                
-                <div id="importFileStatus" style="margin-top: 1rem; display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600;">
+
+                <div id="importFileStatus"
+                  style="margin-top: 1rem; display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600;">
                   <i class="fa-solid fa-file-circle-check" style="color: var(--success); font-size: 1.1rem;"></i>
                   <span id="importFileName" style="word-break: break-all; color: var(--text-color);">file.csv</span>
                   <span id="importFileSize" style="color: var(--text-muted); font-weight: 400;">(0 KB)</span>
-                  <button type="button" id="btnCancelImport" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.85rem; margin-left: auto; font-weight: 600;">Remove</button>
+                  <button type="button" id="btnCancelImport"
+                    style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.85rem; margin-left: auto; font-weight: 600;">Remove</button>
                 </div>
               </div>
-              
+
               <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end;">
-                <button class="btn btn-secondary" id="btnDownloadTemplate" type="button" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; padding: 0 1.15rem; min-width: max-content;">
+                <button class="btn btn-secondary" id="btnDownloadTemplate" type="button"
+                  style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; padding: 0 1.15rem; min-width: max-content;">
                   <i class="fa-solid fa-download"></i> Download Template
                 </button>
-                <button class="btn btn-secondary" id="btnLoadDemoData" type="button" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; border-color: var(--primary); color: var(--primary); background: transparent; white-space: nowrap; padding: 0 1.25rem; font-weight: 600; min-width: max-content;">
+                <button class="btn btn-secondary" id="btnLoadDemoData" type="button"
+                  style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; border-color: var(--primary); color: var(--primary); background: transparent; white-space: nowrap; padding: 0 1.25rem; font-weight: 600; min-width: max-content;">
                   <i class="fa-solid fa-wand-magic-sparkles"></i> Load Demo Data
                 </button>
-                <button class="btn btn-primary" id="btnSubmitImport" type="button" disabled style="display: none; height: 38px; align-items: center; gap: 0.5rem;">
+                <button class="btn btn-primary" id="btnSubmitImport" type="button" disabled
+                  style="display: none; height: 38px; align-items: center; gap: 0.5rem;">
                   <i class="fa-solid fa-upload"></i> Import Students
                 </button>
               </div>
@@ -515,45 +550,54 @@
             <!-- Import Guidelines Card -->
             <div class="chart-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
               <h4 style="font-weight: 700; margin-bottom: 0.25rem;">Guidelines for Import</h4>
-              <ul style="padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
+              <ul
+                style="padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
                 <li>Enrollment numbers must be <strong>unique</strong>. Duplicates will be skipped.</li>
                 <li>Email addresses must be unique and valid.</li>
                 <li>Each student must have a password specified. Empty passwords are not allowed.</li>
                 <li>Headers must match the exact field names (case-insensitive).</li>
               </ul>
-              <div style="margin-top: auto; padding: 0.75rem; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid var(--card-border); font-size: 0.8rem; color: var(--text-muted);">
-                <i class="fa-solid fa-circle-info" style="color: var(--info); margin-right: 0.25rem;"></i> 
+              <div
+                style="margin-top: auto; padding: 0.75rem; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid var(--card-border); font-size: 0.8rem; color: var(--text-muted);">
+                <i class="fa-solid fa-circle-info" style="color: var(--info); margin-right: 0.25rem;"></i>
                 Need a format guide? Click "Download Template" to fetch a template CSV file.
               </div>
             </div>
           </div>
 
           <!-- Uploaded File Preview Card -->
-          <div class="report-section" id="importPreviewCard" style="display: none; margin-top: 1.5rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div class="report-section" id="importPreviewCard"
+            style="display: none; margin-top: 1.5rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
               <div>
-                <h3 style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; color: var(--text-color);">
+                <h3
+                  style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; color: var(--text-color);">
                   <i class="fa-solid fa-file-invoice" style="color: var(--warning);"></i> Uploaded File Preview
                 </h3>
                 <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
                   You can edit cells, delete rows, or add new records before confirming the database import.
                 </p>
               </div>
-              
+
               <div style="display: flex; gap: 0.75rem; align-items: center; margin-left: auto;">
-                <button type="button" class="btn btn-secondary" id="btnPreviewAddRow" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary" id="btnPreviewAddRow"
+                  style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem;">
                   <i class="fa-solid fa-plus"></i> Add Row
                 </button>
-                <button type="button" class="btn btn-secondary" id="btnPreviewCancel" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.2);">
+                <button type="button" class="btn btn-secondary" id="btnPreviewCancel"
+                  style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.2);">
                   <i class="fa-solid fa-xmark"></i> Clear / Discard
                 </button>
-                <button type="button" class="btn btn-primary" id="btnPreviewConfirm" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; background-color: var(--success); border-color: var(--success);">
+                <button type="button" class="btn btn-primary" id="btnPreviewConfirm"
+                  style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; background-color: var(--success); border-color: var(--success);">
                   <i class="fa-solid fa-circle-check"></i> Confirm & Import (<span id="previewCountText">0</span>)
                 </button>
               </div>
             </div>
 
-            <div class="table-wrapper" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 8px;">
+            <div class="table-wrapper"
+              style="max-height: 400px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 8px;">
               <table id="previewTable" style="margin-bottom: 0;">
                 <thead>
                   <tr>
@@ -577,18 +621,25 @@
           </div>
 
           <!-- Students Data Table Card -->
-          <div class="report-section" style="margin-top: 1.5rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div class="report-section"
+            style="margin-top: 1.5rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 1.5rem;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
               <h3 style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-users" style="color: var(--primary);"></i> Students Database
               </h3>
-              
-              <div style="display: flex; gap: 0.75rem; align-items: center; width: 100%; max-width: 550px; margin-left: auto;">
+
+              <div
+                style="display: flex; gap: 0.75rem; align-items: center; width: 100%; max-width: 550px; margin-left: auto;">
                 <div style="position: relative; flex-grow: 1;">
-                  <input type="text" id="studentsDbSearchInput" class="form-control" placeholder="Search by name, enrollment, department..." style="padding-left: 2.5rem; height: 38px;">
-                  <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                  <input type="text" id="studentsDbSearchInput" class="form-control"
+                    placeholder="Search by name, enrollment, department..." style="padding-left: 2.5rem; height: 38px;">
+                  <i class="fa-solid fa-magnifying-glass"
+                    style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
                 </div>
-                <button class="btn btn-danger" id="btnDeleteAllStudents" style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; background: #ef4444; color: white; white-space: nowrap; padding: 0 1rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;" title="Delete all students from database">
+                <button class="btn btn-danger" id="btnDeleteAllStudents"
+                  style="height: 38px; display: inline-flex; align-items: center; gap: 0.5rem; background: #ef4444; color: white; white-space: nowrap; padding: 0 1rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;"
+                  title="Delete all students from database">
                   <i class="fa-solid fa-trash-can"></i> Delete All Students
                 </button>
               </div>
@@ -623,44 +674,56 @@
             <div class="pagination">
               <span class="page-info" id="studentsDbPageInfo">Showing 0 to 0 of 0 entries</span>
               <div class="btn-group">
-                <button class="btn btn-secondary" id="btnStudentsDbPrevPage" style="height: 36px; padding: 0 0.85rem;"><i class="fa-solid fa-chevron-left"></i> Prev</button>
-                <button class="btn btn-secondary" id="btnStudentsDbNextPage" style="height: 36px; padding: 0 0.85rem;">Next <i class="fa-solid fa-chevron-right"></i></button>
+                <button class="btn btn-secondary" id="btnStudentsDbPrevPage"
+                  style="height: 36px; padding: 0 0.85rem;"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                <button class="btn btn-secondary" id="btnStudentsDbNextPage"
+                  style="height: 36px; padding: 0 0.85rem;">Next <i class="fa-solid fa-chevron-right"></i></button>
               </div>
             </div>
           </div>
 
         </div>
 
-      
+
         <!-- SECTION 4: LIBRARY ENTRY/EXIT QR CODE -->
         <div id="sectionQrCode" style="display: none;">
           <div style="max-width: 620px; margin: 1.5rem auto 2.5rem auto; padding: 0 1rem;">
-            <div class="chart-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.5rem 1.75rem; text-align: center; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-              <div style="width: 54px; height: 54px; background: rgba(99, 102, 241, 0.12); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem;">
+            <div class="chart-card"
+              style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.5rem 1.75rem; text-align: center; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+              <div
+                style="width: 54px; height: 54px; background: rgba(99, 102, 241, 0.12); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem;">
                 <i class="fa-solid fa-qrcode"></i>
               </div>
               <h2 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.4rem;">Library Entry/Exit QR Code</h2>
-              <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; max-width: 440px; line-height: 1.5;">
-                Display or print this QR Code at the library entrance. Students scan this code using their mobile phone to enter and exit.
+              <p
+                style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; max-width: 440px; line-height: 1.5;">
+                Display or print this QR Code at the library entrance. Students scan this code using their mobile phone
+                to enter and exit.
               </p>
-              
-              <div style="background: #ffffff; padding: 1.25rem; border-radius: 16px; border: 2px solid var(--card-border); display: inline-flex; justify-content: center; align-items: center; margin-bottom: 1.25rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08);">
+
+              <div
+                style="background: #ffffff; padding: 1.25rem; border-radius: 16px; border: 2px solid var(--card-border); display: inline-flex; justify-content: center; align-items: center; margin-bottom: 1.25rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08);">
                 <canvas id="adminQRCanvas" width="220" height="220"></canvas>
               </div>
 
-              <div style="background: var(--bg-color); border: 1px solid var(--card-border); padding: 0.45rem 1.1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.75rem;">
-                QR Value: <code id="activeQRConfig" style="color: var(--primary); margin-left: 0.25rem;">SMART_LIBRARY_QR_2026</code>
+              <div
+                style="background: var(--bg-color); border: 1px solid var(--card-border); padding: 0.45rem 1.1rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.75rem;">
+                QR Value: <code id="activeQRConfig"
+                  style="color: var(--primary); margin-left: 0.25rem;">SMART_LIBRARY_QR_2026</code>
               </div>
 
               <!-- Download & Print Action Buttons -->
               <div style="display: flex; flex-wrap: wrap; gap: 0.85rem; justify-content: center; width: 100%;">
-                <button class="btn btn-primary" id="downloadQRPngBtn" style="height: 42px; font-size: 0.88rem; padding: 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                <button class="btn btn-primary" id="downloadQRPngBtn"
+                  style="height: 42px; font-size: 0.88rem; padding: 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                   <i class="fa-solid fa-file-image"></i> Download .PNG
                 </button>
-                <button class="btn btn-primary" id="downloadQRJpgBtn" style="height: 42px; font-size: 0.88rem; padding: 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; background: #059669; border-color: #059669; border-radius: 8px;">
+                <button class="btn btn-primary" id="downloadQRJpgBtn"
+                  style="height: 42px; font-size: 0.88rem; padding: 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; background: #059669; border-color: #059669; border-radius: 8px;">
                   <i class="fa-solid fa-image"></i> Download .JPEG
                 </button>
-                <button class="btn btn-secondary" id="printQRBtn" style="height: 42px; font-size: 0.88rem; padding: 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                <button class="btn btn-secondary" id="printQRBtn"
+                  style="height: 42px; font-size: 0.88rem; padding: 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                   <i class="fa-solid fa-print"></i> Print QR Code
                 </button>
               </div>
@@ -669,9 +732,14 @@
         </div>
 
         <!-- Admin Portal Footer -->
-        <footer style="margin-top: 3rem; padding: 1.5rem 0.5rem 1rem 0.5rem; text-align: center; border-top: 1px solid var(--card-border); color: var(--text-muted); font-size: 0.85rem; line-height: 1.6;">
-          <p style="font-weight: 600; margin-bottom: 0.35rem; color: var(--text-color); font-size: 0.95rem;">&copy; 2026 Smart Library Entry & Exit System.</p>
-          <p style="margin: 0; font-size: 0.9rem;">This Module is Build, Designed, and Devloped by <span style="color: var(--primary, #6366f1); font-weight: 700;">Jadav Dashrath</span>, <span style="color: var(--primary, #6366f1); font-weight: 700;">Chachcha Madhav</span> and <span style="color: var(--primary, #6366f1); font-weight: 700;">Dabhi Prit</span></p>
+        <footer
+          style="margin-top: 3rem; padding: 1.5rem 0.5rem 1rem 0.5rem; text-align: center; border-top: 1px solid var(--card-border); color: var(--text-muted); font-size: 0.85rem; line-height: 1.6;">
+          <p style="font-weight: 600; margin-bottom: 0.35rem; color: var(--text-color); font-size: 0.95rem;">&copy; 2026
+            Smart Library Entry & Exit System.</p>
+          <p style="margin: 0; font-size: 0.9rem;">This Module is Build, Designed, and Devloped by <span
+              style="color: var(--primary, #6366f1); font-weight: 700;">Jadav Dashrath</span>, <span
+              style="color: var(--primary, #6366f1); font-weight: 700;">Chachcha Madhav</span> and <span
+              style="color: var(--primary, #6366f1); font-weight: 700;">Dabhi Prit</span></p>
         </footer>
 
       </main>
@@ -681,37 +749,47 @@
   <!-- ========================================================== -->
   <!-- ADMIN MODAL DIALOGS -->
   <!-- ========================================================== -->
-  
+
   <!-- ADMIN SETTINGS (PROFILE & PASSWORD) -->
   <div class="modal-overlay" id="adminSettingsModal">
     <div class="modal-card" style="max-width: 520px; width: 95%;">
       <div class="modal-header">
-        <h4 class="modal-title"><i class="fa-solid fa-user-gear" style="color: var(--primary); margin-right: 0.5rem;"></i> Admin Account Settings</h4>
+        <h4 class="modal-title"><i class="fa-solid fa-user-gear"
+            style="color: var(--primary); margin-right: 0.5rem;"></i> Admin Account Settings</h4>
         <button class="modal-close" id="closeAdminSettings">&times;</button>
       </div>
-      
+
       <!-- 1. Admin Profile Edit Form -->
       <form id="adminProfileForm" style="margin-bottom: 2rem;">
-        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
+        <h5
+          style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
           <i class="fa-solid fa-id-badge"></i> Edit Profile Information
         </h5>
-        
+
         <div class="form-group">
-          <label for="adminSettingsUsername"><i class="fa-solid fa-user-tag" style="color: var(--primary); margin-right: 0.25rem;"></i> Admin User ID / Username (Login ID)</label>
-          <input type="text" id="adminSettingsUsername" class="form-control" placeholder="e.g. admin or admin@lj.edu" required autocomplete="username">
-          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Use this User ID / Username to log in to the admin panel.</small>
+          <label for="adminSettingsUsername"><i class="fa-solid fa-user-tag"
+              style="color: var(--primary); margin-right: 0.25rem;"></i> Admin User ID / Username (Login ID)</label>
+          <input type="text" id="adminSettingsUsername" class="form-control" placeholder="e.g. admin or admin@lj.edu"
+            required autocomplete="username">
+          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Use this
+            User ID / Username to log in to the admin panel.</small>
         </div>
 
         <div class="form-group">
-          <label for="adminSettingsName"><i class="fa-solid fa-user" style="color: var(--primary); margin-right: 0.25rem;"></i> Admin Full Name / Display Name</label>
+          <label for="adminSettingsName"><i class="fa-solid fa-user"
+              style="color: var(--primary); margin-right: 0.25rem;"></i> Admin Full Name / Display Name</label>
           <input type="text" id="adminSettingsName" class="form-control" placeholder="e.g. Library Admin" required>
-          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Display name shown on your dashboard and sidebar.</small>
+          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Display name
+            shown on your dashboard and sidebar.</small>
         </div>
 
         <div class="form-group">
-          <label for="adminSettingsEmail"><i class="fa-solid fa-envelope" style="color: var(--primary); margin-right: 0.25rem;"></i> Admin Email ID</label>
-          <input type="email" id="adminSettingsEmail" class="form-control" placeholder="e.g. admin@lj.edu" required autocomplete="email">
-          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Official email address for admin login & notifications.</small>
+          <label for="adminSettingsEmail"><i class="fa-solid fa-envelope"
+              style="color: var(--primary); margin-right: 0.25rem;"></i> Admin Email ID</label>
+          <input type="email" id="adminSettingsEmail" class="form-control" placeholder="e.g. admin@lj.edu" required
+            autocomplete="email">
+          <small style="display: block; margin-top: 0.25rem; font-size: 0.78rem; color: var(--text-muted);">Official
+            email address for admin login & notifications.</small>
         </div>
 
         <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
@@ -723,35 +801,39 @@
 
       <!-- 2. Change Password Form -->
       <form id="adminChangePasswordForm">
-        <h5 style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
+        <h5
+          style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--card-border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
           <i class="fa-solid fa-key"></i> Change Password
         </h5>
-        
+
         <div class="form-group">
           <label for="adminOldPassword">Current Password</label>
           <div class="password-input-wrapper">
             <input type="password" id="adminOldPassword" class="form-control" placeholder="••••••••" required>
-            <button type="button" class="btn-toggle-password" data-target="adminOldPassword" aria-label="Toggle password visibility" title="Show Password">
+            <button type="button" class="btn-toggle-password" data-target="adminOldPassword"
+              aria-label="Toggle password visibility" title="Show Password">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>
-        
+
         <div class="form-group">
           <label for="adminNewPassword">New Password</label>
           <div class="password-input-wrapper">
             <input type="password" id="adminNewPassword" class="form-control" placeholder="••••••••" required>
-            <button type="button" class="btn-toggle-password" data-target="adminNewPassword" aria-label="Toggle password visibility" title="Show Password">
+            <button type="button" class="btn-toggle-password" data-target="adminNewPassword"
+              aria-label="Toggle password visibility" title="Show Password">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>
-        
+
         <div class="form-group">
           <label for="adminConfirmPassword">Confirm New Password</label>
           <div class="password-input-wrapper">
             <input type="password" id="adminConfirmPassword" class="form-control" placeholder="••••••••" required>
-            <button type="button" class="btn-toggle-password" data-target="adminConfirmPassword" aria-label="Toggle password visibility" title="Show Password">
+            <button type="button" class="btn-toggle-password" data-target="adminConfirmPassword"
+              aria-label="Toggle password visibility" title="Show Password">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
@@ -770,16 +852,20 @@
   <div class="modal-overlay" id="registeredStudentsModal">
     <div class="modal-card" style="max-width: 900px; width: 95%;">
       <div class="modal-header">
-        <h4 class="modal-title"><i class="fa-solid fa-users" style="color: var(--primary); margin-right: 0.5rem;"></i> Registered Students List</h4>
+        <h4 class="modal-title"><i class="fa-solid fa-users" style="color: var(--primary); margin-right: 0.5rem;"></i>
+          Registered Students List</h4>
         <button class="modal-close" id="closeStudentsModal">&times;</button>
       </div>
 
       <div style="margin-bottom: 1.25rem; display: flex; gap: 1rem; align-items: center;">
         <div style="position: relative; flex-grow: 1;">
-          <input type="text" id="studentsSearchInput" class="form-control" placeholder="Search by name, enrollment no, department, email..." style="padding-left: 2.5rem;">
-          <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+          <input type="text" id="studentsSearchInput" class="form-control"
+            placeholder="Search by name, enrollment no, department, email..." style="padding-left: 2.5rem;">
+          <i class="fa-solid fa-magnifying-glass"
+            style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
         </div>
-        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); min-width: 150px; text-align: right;">
+        <div
+          style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); min-width: 150px; text-align: right;">
           Total Registered: <span id="modalTotalStudentsCount" style="color: var(--primary); font-weight: 800;">0</span>
         </div>
       </div>
@@ -806,7 +892,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
         <button type="button" class="btn btn-secondary" id="closeStudentsModalBtn">Close</button>
       </div>
@@ -815,7 +901,7 @@
 
   <!-- Socket.io library (Served dynamically by Express Socket.io module) -->
   <script src="/socket.io/socket.io.js"></script>
-  
+
   <!-- Client-side Admin JavaScript -->
   <script src="js/admin.js?v=3.5"></script>
 
@@ -837,4 +923,5 @@
     }
   </script>
 </body>
+
 </html>
