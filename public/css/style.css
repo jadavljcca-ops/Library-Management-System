@@ -129,7 +129,7 @@ a:hover {
 .brand-logo {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, var(--primary), #818cf8);
+  background: #ffffff;
   border-radius: 50% !important;
   overflow: hidden !important;
   display: flex;
@@ -139,6 +139,7 @@ a:hover {
   font-size: 1.5rem;
   box-shadow: 0 4px 12px var(--primary-glow);
   flex-shrink: 0;
+  padding: 2px;
 }
 
 .brand-logo img {
@@ -146,6 +147,7 @@ a:hover {
   height: 100%;
   object-fit: cover !important;
   border-radius: 50% !important;
+  display: block;
 }
 
 .brand-name {
@@ -921,6 +923,41 @@ tr:hover td {
 .auth-form-header p {
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+/* Login Form Top Center Logo */
+.auth-form-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.auth-form-logo {
+  width: 78px;
+  height: 78px;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  background: #ffffff;
+  padding: 2px;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.auth-form-logo:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.24);
+}
+
+.auth-form-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block;
 }
 
 /* Back Arrow to Landing Page on Login Form Card */
@@ -1839,6 +1876,11 @@ tr:hover td {
     font-size: 0.78rem !important;
     padding: 0.35rem 0.4rem !important;
     height: 36px !important;
+  }
+
+  .auth-form-logo {
+    width: 66px !important;
+    height: 66px !important;
   }
 
   /* Student portal: tighten further on very small phones */
