@@ -40,22 +40,58 @@ function setupStickyNavbar() {
 }
 
 // ==========================================
-// STATS ANIME COUNTER (INTERSECTION OBSERVER)
+// STATS LIVE LOADER & ANIMATION COUNTER
 // ==========================================
+async function loadPublicStats(statNumbers, animatedRef) {
+  const studentStat = document.getElementById('landingTotalStudents');
+  const visitStat = document.getElementById('landingTotalVisits');
+
+  try {
+    const res = await fetch('/api/public-stats');
+    if (!res.ok) throw new Error('Failed to fetch public stats');
+    const data = await res.json();
+    if (data.success) {
+      if (studentStat) {
+        studentStat.setAttribute('data-target', data.totalStudents);
+        if (animatedRef.value) {
+          studentStat.textContent = Number(data.totalStudents).toLocaleString();
+        }
+      }
+      if (visitStat) {
+        visitStat.setAttribute('data-target', data.totalVisits);
+        if (animatedRef.value) {
+          visitStat.textContent = Number(data.totalVisits).toLocaleString();
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load public stats:', err);
+  }
+}
+
 function setupStatsCounter() {
   const statsSection = document.querySelector('.stats');
   const statNumbers = document.querySelectorAll('.stat-number');
   
   if (!statsSection || statNumbers.length === 0) return;
 
-  let animated = false;
+  const animatedRef = { value: false };
+
+  // Fetch live stats immediately from database
+  loadPublicStats(statNumbers, animatedRef);
 
   const animateCounters = () => {
     statNumbers.forEach(stat => {
-      const target = parseInt(stat.getAttribute('data-target'), 10);
+      const target = parseInt(stat.getAttribute('data-target'), 10) || 0;
       const prefix = stat.getAttribute('data-prefix') || '';
       const suffix = stat.getAttribute('data-suffix') || '';
-      const duration = 1500; // 1.5 seconds animation
+
+      if (target === 0) {
+        stat.textContent = `${prefix}0${suffix}`;
+        return;
+      }
+
+      const duration = 1200; // 1.2 seconds animation
       const startTime = performance.now();
 
       const updateCount = (currentTime) => {
@@ -82,9 +118,9 @@ function setupStatsCounter() {
   // Trigger counters when scrolled into view
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      if (entry.isIntersecting && !animated) {
+      if (entry.isIntersecting && !animatedRef.value) {
         animateCounters();
-        animated = true; // Run only once
+        animatedRef.value = true;
         observer.unobserve(entry.target);
       }
     });

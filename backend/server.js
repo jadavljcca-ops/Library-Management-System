@@ -261,6 +261,26 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Public Live Statistics for Landing Page
+app.get('/api/public-stats', async (req, res) => {
+  try {
+    const studentsResult = await db.query('SELECT COUNT(*) AS total FROM students');
+    const totalStudents = parseInt(studentsResult.rows[0]?.total || 0, 10);
+
+    const visitsResult = await db.query('SELECT COUNT(*) AS total FROM attendance');
+    const totalVisits = parseInt(visitsResult.rows[0]?.total || 0, 10);
+
+    res.json({
+      success: true,
+      totalStudents,
+      totalVisits
+    });
+  } catch (error) {
+    console.error('Public stats fetch error:', error);
+    res.status(500).json({ success: false, totalStudents: 0, totalVisits: 0 });
+  }
+});
+
 // ==========================================
 // AUTHENTICATION APIS
 // ==========================================

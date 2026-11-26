@@ -353,13 +353,61 @@ header {
   margin: 0 auto;
 }
 
-/* Stat Cards - 4 cards in 1 row */
+/* Stat Cards - 4 cards in 1 row (Laptop / Desktop) */
 .stats-grid {
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 1.25rem;
   margin-bottom: 2rem;
   width: 100%;
+}
+
+.stats-grid .stat-card {
+  min-height: 185px;
+  padding: 2rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.65rem;
+  border-radius: 16px;
+}
+
+.stats-grid .stat-icon {
+  order: -1;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  font-size: 1.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.stats-grid .stat-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.stats-grid .stat-label {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.stats-grid .stat-value {
+  font-size: 2.3rem;
+  font-weight: 800;
+  line-height: 1.1;
 }
 
 .stats-grid-split {
@@ -1553,37 +1601,54 @@ tr:hover td {
     font-size: 16px !important;
   }
 
-  /* Admin Dashboard 4 cards in 1 row across all screen sizes */
+  /* Admin Dashboard 4 cards in 1 row on medium/tablet/laptop view */
   .stats-grid {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.5rem !important;
+    gap: 0.75rem !important;
     width: 100% !important;
-    margin-bottom: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
   }
 
   .stats-grid .stat-card {
-    padding: 0.75rem 0.5rem !important;
+    min-height: 165px !important;
+    padding: 1.5rem 0.75rem !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    border-radius: 12px !important;
-    gap: 0.35rem !important;
+    border-radius: 14px !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
     min-width: 0 !important;
   }
 
+  .stats-grid .stat-icon {
+    order: -1 !important;
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 1.3rem !important;
+    border-radius: 12px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
   .stats-grid .stat-info {
+    display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
-    gap: 0.15rem !important;
+    gap: 0.25rem !important;
     width: 100% !important;
     min-width: 0 !important;
   }
 
   .stats-grid .stat-label {
-    font-size: 0.68rem !important;
-    line-height: 1.15 !important;
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
     white-space: normal !important;
     text-align: center !important;
     word-break: normal !important;
@@ -1591,18 +1656,9 @@ tr:hover td {
   }
 
   .stats-grid .stat-value {
-    font-size: 1.55rem !important;
+    font-size: 1.85rem !important;
     font-weight: 800 !important;
-    line-height: 1 !important;
-  }
-
-  .stats-grid .stat-icon {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 0.95rem !important;
-    border-radius: 8px !important;
-    margin-left: 0 !important;
-    order: -1 !important;
+    line-height: 1.1 !important;
   }
 
   /* Other sections stack vertically on mobile */
@@ -1789,6 +1845,64 @@ tr:hover td {
   }
 }
 
+/* Mobile View ONLY (Phones <= 600px): Cards strictly in 1 column */
+@media (max-width: 600px) {
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+    width: 100% !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .stats-grid .stat-card {
+    min-height: auto !important;
+    padding: 1.15rem 1.25rem !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    text-align: left !important;
+    border-radius: 14px !important;
+    gap: 1rem !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .stats-grid .stat-icon {
+    order: unset !important;
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 1.3rem !important;
+    border-radius: 12px !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .stats-grid .stat-info {
+    align-items: flex-start !important;
+    text-align: left !important;
+    gap: 0.25rem !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .stats-grid .stat-label {
+    font-size: 0.88rem !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+    text-align: left !important;
+    word-break: normal !important;
+    font-weight: 600 !important;
+  }
+
+  .stats-grid .stat-value {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+  }
+}
+
 /* Extra Small Mobile Devices (<= 480px) */
 @media (max-width: 480px) {
   .header-left h1 {
@@ -1843,25 +1957,32 @@ tr:hover td {
     white-space: nowrap !important;
   }
 
-  /* Admin Dashboard 4 cards in 1 row on tiny mobile screens */
+  /* Admin Dashboard 1 column on tiny mobile screens */
   .stats-grid {
-    gap: 0.35rem !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
   }
   .stats-grid .stat-card {
-    padding: 0.55rem 0.25rem !important;
-    border-radius: 10px !important;
+    min-height: auto !important;
+    padding: 1rem 1.15rem !important;
+    border-radius: 14px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
   }
   .stats-grid .stat-label {
-    font-size: 0.58rem !important;
-    letter-spacing: 0px !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 0.3px !important;
   }
   .stats-grid .stat-value {
-    font-size: 1.35rem !important;
+    font-size: 1.95rem !important;
   }
   .stats-grid .stat-icon {
-    width: 26px !important;
-    height: 26px !important;
-    font-size: 0.8rem !important;
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 1.25rem !important;
+    border-radius: 12px !important;
+    order: unset !important;
   }
 
   .filter-bar {

@@ -20,7 +20,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="css/landing.css?v=3.5">
+  <link rel="stylesheet" href="css/landing.css?v=3.6">
 
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -39,13 +39,6 @@
         </div>
         <span class="brand-name">SmartLib <span class="gradient-text">QR</span></span>
       </div>
-
-      <ul class="nav-menu">
-        <li><a href="#features" class="nav-link">Features</a></li>
-        <li><a href="#stats" class="nav-link">Statistics</a></li>
-        <li><a href="#faq" class="nav-link">FAQs</a></li>
-        <li><a href="#contact" class="nav-link">Contact</a></li>
-      </ul>
 
       <div class="nav-actions">
         <button class="btn btn-primary nav-btn-desktop" id="pwaInstallBtn" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 10px; display: flex; align-items: center; gap: 0.5rem;" title="Install App">
@@ -79,13 +72,6 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-
-      <ul class="drawer-menu">
-        <li><a href="#features" class="drawer-link">Features</a></li>
-        <li><a href="#stats" class="drawer-link">Statistics</a></li>
-        <li><a href="#faq" class="drawer-link">FAQs</a></li>
-        <li><a href="#contact" class="drawer-link">Contact</a></li>
-        </ul>
         <div class="drawer-actions">
           <button class="btn btn-primary" id="pwaInstallBtnMobile" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
             <i class="fa-solid fa-download"></i> Install App
@@ -216,11 +202,11 @@
       <div class="stats-container">
         <div class="stats-grid">
           <div class="stat-item">
-            <span class="stat-number" data-target="5000" data-suffix="+">0</span>
+            <span class="stat-number" id="landingTotalStudents" data-target="0">0</span>
             <span class="stat-label">Registered Students</span>
           </div>
           <div class="stat-item">
-            <span class="stat-number" data-target="15000" data-suffix="+">0</span>
+            <span class="stat-number" id="landingTotalVisits" data-target="0">0</span>
             <span class="stat-label">Managed Entry Visits</span>
           </div>
           <div class="stat-item">
@@ -440,7 +426,7 @@
   </script>
 
   <!-- External Scripts -->
-  <script src="js/landing.js?v=3.5"></script>
+  <script src="js/landing.js?v=3.6"></script>
 </body>
 
 </html>
