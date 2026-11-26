@@ -498,7 +498,6 @@ function renderTable() {
       <td>${row.course} <span style="color: var(--text-muted); font-size: 0.8rem;">(${row.semester})</span></td>
       <td>${formatTimeDisplay(row.entry_time)}</td>
       <td><span title="${row.entry_latitude || ''}, ${row.entry_longitude || ''}">${row.entry_location_name || '-'}</span></td>
-      <td><strong>${formatDistanceDisplay(row.distance_meters)}</strong></td>
       <td>${formatDateDDMMYYYY(row.exit_date)}</td>
       <td>${formatTimeDisplay(row.exit_time)}</td>
       <td>${row.duration || '-'}</td>
@@ -907,7 +906,7 @@ exportCsvBtn.addEventListener('click', () => {
     return;
   }
 
-  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
+  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
   const rows = allRecords.map(rec => [
     formatDateDDMMYYYY(rec.entry_date),
     rec.name,
@@ -917,7 +916,6 @@ exportCsvBtn.addEventListener('click', () => {
     rec.semester,
     formatTimeDisplay(rec.entry_time),
     rec.entry_location_name || '-',
-    formatDistanceDisplay(rec.distance_meters),
     formatDateDDMMYYYY(rec.exit_date),
     formatTimeDisplay(rec.exit_time),
     rec.duration || '-',
@@ -950,7 +948,7 @@ exportExcelBtn.addEventListener('click', () => {
     return;
   }
 
-  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
+  const headers = ['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course', 'Semester', 'Entry Time', 'Entry Location', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status'];
   const rows = allRecords.map(rec => [
     formatDateDDMMYYYY(rec.entry_date),
     rec.name,
@@ -960,7 +958,6 @@ exportExcelBtn.addEventListener('click', () => {
     rec.semester,
     formatTimeDisplay(rec.entry_time),
     rec.entry_location_name || '-',
-    formatDistanceDisplay(rec.distance_meters),
     formatDateDDMMYYYY(rec.exit_date),
     formatTimeDisplay(rec.exit_time),
     rec.duration || '-',
@@ -1002,7 +999,7 @@ exportPdfBtn.addEventListener('click', () => {
     doc.text(`Generated on: ${new Date().toLocaleString('en-IN')} | Total Logs: ${allRecords.length}`, 14, 25);
 
     // AutoTable mapping
-    const headers = [['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course & Sem', 'Entry Time', 'Distance', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status']];
+    const headers = [['Entry Date (DD/MM/YYYY)', 'Student Name', 'Enrollment No', 'Department', 'Course & Sem', 'Entry Time', 'Exit Date (DD/MM/YYYY)', 'Exit Time', 'Duration', 'Status']];
     const data = allRecords.map(rec => [
       formatDateDDMMYYYY(rec.entry_date),
       rec.name,
@@ -1010,7 +1007,6 @@ exportPdfBtn.addEventListener('click', () => {
       rec.department,
       `${rec.course} (${rec.semester})`,
       formatTimeDisplay(rec.entry_time),
-      formatDistanceDisplay(rec.distance_meters),
       formatDateDDMMYYYY(rec.exit_date),
       formatTimeDisplay(rec.exit_time),
       rec.duration || '-',
